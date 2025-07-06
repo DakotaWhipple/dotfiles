@@ -1,0 +1,15 @@
+#!/bin/bash
+# Usage: ./go_funcs output.txt
+
+output="$1"
+
+# Empty the output file
+> "$output"
+
+# Find all .go files recursively
+find . -type f -name '*.go' | while read -r file; do
+    echo "$file:" >> "$output"
+    # Extract function names from each file
+    grep -E '^func ' "$file" | sed -E 's/^func[[:space:]]+(\([^)]+\)[[:space:]]*)?([A-Za-z0-9_]+).*/\2/' >> "$output"
+    echo "" >> "$output"
+done
