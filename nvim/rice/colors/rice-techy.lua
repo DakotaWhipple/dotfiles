@@ -5,15 +5,15 @@ vim.g.colors_name = "rice-techy"
 vim.o.termguicolors = true
 
 local c = {
-  bg = "#0e1216", bg_dark = "#070a0e", bg_hl = "#1d232a",
-  fg = "#c7d2df", muted = "#8794a1", accent = "#60a7ff", alt = "#c681e4",
-  red = "#f87992", green = "#3bc47d", yellow = "#ccd046",
-  blue = "#75a7ff", magenta = "#da82da", cyan = "#00d0da",
-  kw = "#fc94a9", fn = "#7ebef8", str = "#6dbf90",
-  num = "#56cadb", typ = "#b9ce8f", const = "#c1a8f2",
-  prop = "#bac7ea", comment = "#6d7c8c", op = "#a1abb6",
-  special = "#c681e4",
-  border_a = "#3b6798", border_i = "#161b21",
+  bg = "#0e1216", bg_dark = "#070a0e", bg_hl = "#1c242b",
+  fg = "#c7d2df", muted = "#8794a1", accent = "#60a7ff", alt = "#d26ffb",
+  red = "#ff7390", green = "#00c777", yellow = "#cdd100",
+  blue = "#75a7ff", magenta = "#e970ea", cyan = "#00d0da",
+  kw = "#ff91a8", fn = "#76beff", str = "#58c389",
+  num = "#1acee3", typ = "#b6d07e", const = "#c3a4ff",
+  prop = "#b8c7f0", comment = "#6d7c8c", op = "#a1abb6",
+  special = "#d26ffb",
+  border_a = "#3b6798", border_i = "#161c21",
   black = "#29313a", bblack = "#454e58",
 }
 
@@ -146,9 +146,9 @@ hl("DiagnosticVirtualTextHint", { fg = c.cyan, bg = c.bg_dark })
 hl("GitSignsAdd", { fg = c.green })
 hl("GitSignsChange", { fg = c.fn })
 hl("GitSignsDelete", { fg = c.red })
-hl("DiffAdd", { bg = "#142c38" })
+hl("DiffAdd", { bg = "#112c39" })
 hl("DiffChange", { bg = "#1c2a39" })
-hl("DiffDelete", { bg = "#21283b" })
+hl("DiffDelete", { bg = "#21283c" })
 hl("DiffText", { bg = "#283e57" })
 hl("Added", { fg = c.green })
 hl("Changed", { fg = c.fn })

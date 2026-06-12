@@ -36,6 +36,13 @@ if command -v brew >/dev/null; then
   done
 fi
 
+## desktop widgets — Übersicht renders the rice widgets over the wallpaper
+if command -v brew >/dev/null && [ ! -d "/Applications/Übersicht.app" ]; then
+  brew install -q --cask ubersicht
+fi
+link "$DOTS/ubersicht" "$HOME/Library/Application Support/Übersicht/widgets/rice"
+open -a "Übersicht" 2>/dev/null || true
+
 ## wallpapers
 for d in "$DOTS/themes"/*/; do
   name="$(basename "$d")"

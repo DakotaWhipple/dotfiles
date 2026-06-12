@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# home — terminal greeting for new shells: big block clock, date, vibe +
+# palette strip, jj status. Same motifs as the Chrome new tab and the
+# Übersicht desktop widgets, so all three "homes" read as one set.
+set -uo pipefail
+
+colors="$HOME/.config/theme/colors.sh"
+[ -f "$colors" ] || exit 0
+# shellcheck source=/dev/null
+source "$colors"
+
+fg() { printf '\033[38;2;%d;%d;%dm' "0x${1:0:2}" "0x${1:2:2}" "0x${1:4:2}"; }
+R=$'\033[0m'
+
+# ---- block-digit clock (3 rows) -------------------------------------------
+glyph() { # glyph <char> <row 1-3>
+  local ch="$1" row="$2"
+  case "$ch" in
+    0) set -- "█▀▀█" "█  █" "▀▀▀▀" ;;
+    1) set -- " ▄█ " "  █ " "  ▀ " ;;
+    2) set -- "▀▀▀█" "█▀▀▀" "▀▀▀▀" ;;
+    3) set -- "▀▀▀█" " ▀▀█" "▀▀▀▀" ;;
+    4) set -- "█  █" "▀▀▀█" "   ▀" ;;
+    5) set -- "█▀▀▀" "▀▀▀█" "▀▀▀▀" ;;
+    6) set -- "█▀▀▀" "█▀▀█" "▀▀▀▀" ;;
+    7) set -- "▀▀▀█" "   █" "   ▀" ;;
+    8) set -- "█▀▀█" "█▀▀█" "▀▀▀▀" ;;
+    9) set -- "█▀▀█" "▀▀▀█" "▀▀▀▀" ;;
+    :) set -- " " "▀" "▀" ;;
+  esac
+  printf '%s' "${!row}"
+}
+
+now=$(date +%H:%M)
+echo
+for row in 1 2 3; do
+  printf '  %s' "$(fg "$ACCENT")"
+  for ((i = 0; i < ${#now}; i++)); do
+    glyph "${now:$i:1}" "$row"
+    printf ' '
+  done
+  printf '%s\n' "$R"
+done
+
+# ---- date · vibe · palette strip -------------------------------------------
+printf '\n  %s%s%s   %s●%s %s%s   ' \
+  "$(fg "$FG_MUTED")" "$(date '+%A, %B %-d')" "$R" \
+  "$(fg "$ACCENT")" "$(fg "$FG")" "$THEME_NAME" "$R"
+for c in "$RED" "$YELLOW" "$GREEN" "$CYAN" "$BLUE" "$MAGENTA" "$ACCENT" "$ACCENT_ALT"; do
+  printf '%s▀▀%s' "$(fg "$c")" "$R"
+done
+echo
+
+# ---- jj status (fast: no working-copy snapshot) ----------------------------
+if jj root --ignore-working-copy >/dev/null 2>&1; then
+  line=$(jj log -r @ --no-graph --ignore-working-copy --color never \
+    -T 'change_id.shortest(8) ++ "  " ++ if(description, description.first_line(), "(no description)") ++ if(bookmarks, "  [" ++ bookmarks.join(",") ++ "]", "")' 2>/dev/null)
+  [ -n "$line" ] && printf '  %sjj%s %s%s%s\n' \
+    "$(fg "$ACCENT_ALT")" "$R" "$(fg "$FG_MUTED")" "$line" "$R"
+fi
+echo

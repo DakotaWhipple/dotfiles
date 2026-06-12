@@ -134,16 +134,18 @@ def build(seed):
 
     base("BG",      oklch(L_bg, C_bg, H_bg))
     base("BG_DARK", oklch(L_bg - 0.035, C_bg, H_bg))
-    base("BG_HL",   oklch(L_bg + 0.075, C_bg + 0.005, H_bg))
+    base("BG_HL",   oklch(L_bg + 0.075, C_bg + 0.008, H_bg))
     base("FG",      with_contrast(0.86, 0.022, H_fg, p["BG"], 9.0))
     base("FG_MUTED", with_contrast(0.66, 0.025, H_fg, p["BG"], 4.0))
-    base("ACCENT",     with_contrast(0.72, 0.13 * sat, H_acc, p["BG"], 4.5))
-    base("ACCENT_ALT", with_contrast(0.71, 0.125 * sat, H_alt, p["BG"], 4.5))
+    # chroma rides at the sRGB gamut's edge for the display; comfort comes from
+    # the unchanged contrast targets (same lightness vs bg), not from greyness.
+    base("ACCENT",     with_contrast(0.72, 0.165 * sat, H_acc, p["BG"], 4.5))
+    base("ACCENT_ALT", with_contrast(0.71, 0.155 * sat, H_alt, p["BG"], 4.5))
 
     for name, hue in ANSI_HUES.items():
         h = hue_toward(hue, H_acc, cohesion)
         L = {"yellow": 0.83, "cyan": 0.78}.get(name, 0.73)
-        c = 0.125 * sat
+        c = 0.15 * sat
         base(name.upper(), with_contrast(L, c, h, p["BG"], 4.5))
         base("BRIGHT_" + name.upper(), oklch(min(0.95, L + 0.06), c + 0.01, h))
 
@@ -163,7 +165,7 @@ def build(seed):
     # syntax roles — IntelliJ New UI temperament: one warm pole (keywords),
     # one cool pole (functions), everything at near-uniform L and modest
     # chroma so code reads as prose with landmarks, not confetti.
-    sl, sc = 0.78, 0.085 * sat
+    sl, sc = 0.78, 0.095 * sat
     p["SYN_KEYWORD"]  = with_contrast(sl, sc + 0.02, hue_toward(45, H_acc, 0.25), p["BG"], 4.5)
     p["SYN_FUNC"]     = with_contrast(sl, sc, hue_toward(245, H_acc, 0.20), p["BG"], 4.5)
     p["SYN_STRING"]   = with_contrast(sl - 0.04, sc, hue_toward(140, H_acc, 0.15), p["BG"], 4.5)
@@ -177,8 +179,8 @@ def build(seed):
 
     base("WALL0", oklch(max(0.10, L_bg - 0.07), C_bg, H_bg))
     base("WALL1", p["BG"])
-    base("WALL2", mix(p["BG"], p["ACCENT"], 0.16))
-    base("WALL3", mix(p["BG"], p["ACCENT_ALT"], 0.16))
+    base("WALL2", mix(p["BG"], p["ACCENT"], 0.24))
+    base("WALL3", mix(p["BG"], p["ACCENT_ALT"], 0.24))
     return p
 
 # ---------------------------------------------------------------- file output

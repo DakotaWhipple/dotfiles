@@ -11,10 +11,44 @@
     <header>
       <div id="clock">--:--</div>
       <div id="date"></div>
-      <div id="vibe"></div>
+      <div id="vibe-row">
+        <span id="vibe"></span>
+        <span id="palette"></span>
+      </div>
     </header>
+
+    <div id="searchbar">
+      <input id="search" type="text" autocomplete="off" spellcheck="false"
+             placeholder="filter bookmarks — enter opens first hit, or searches the web">
+    </div>
+
+    <nav id="daily"></nav>
     <section id="bookmarks"></section>
+
+    <footer>
+      <span><kbd>/</kbd> filter</span>
+      <span><kbd>a</kbd> add bookmark</span>
+      <span><kbd>esc</kbd> clear</span>
+      <button id="add-btn" title="add bookmark">+</button>
+    </footer>
   </main>
+
+  <div id="add-overlay" hidden>
+    <form id="add-form">
+      <h3>add bookmark</h3>
+      <input id="add-url" type="text" placeholder="url" autocomplete="off" spellcheck="false" required>
+      <input id="add-title" type="text" placeholder="title (optional — defaults to hostname)" autocomplete="off">
+      <select id="add-folder"></select>
+      <div class="row">
+        <button type="submit">save</button>
+        <button type="button" id="add-cancel">cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" hidden></div>
+
+  <script src="bookmarks-data.js"></script>
   <script src="newtab.js"></script>
 </body>
 </html>

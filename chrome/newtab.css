@@ -1,4 +1,7 @@
-/* layout only — every color comes from the generated theme.css variables */
+/* layout only — every color comes from the generated theme.css variables.
+   Shared rice motifs (also on the desktop widgets + terminal home):
+   thin oversized clock, vibe dot + name, palette block strip, glassy cards
+   over the wallpaper gradient. */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -7,56 +10,152 @@ body {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   min-height: 100vh;
   display: grid;
-  place-items: center;
-  background-image: radial-gradient(ellipse at 20% 0%, var(--wall2) 0%, transparent 50%),
-                    radial-gradient(ellipse at 80% 100%, var(--wall3) 0%, transparent 50%);
+  place-items: start center;
+  background-image: radial-gradient(ellipse at 18% -10%, var(--wall2) 0%, transparent 55%),
+                    radial-gradient(ellipse at 85% 110%, var(--wall3) 0%, transparent 55%),
+                    linear-gradient(160deg, var(--wall0), var(--bg) 60%);
 }
 
-main { width: min(880px, 92vw); padding: 48px 0; }
+main { width: min(1180px, 94vw); padding: 6vh 0 32px; }
 
-header { text-align: center; margin-bottom: 40px; }
-#clock { font-size: 64px; font-weight: 700; letter-spacing: -2px; }
-#date  { color: var(--muted); margin-top: 4px; }
-#vibe  { color: var(--accent); margin-top: 10px; font-size: 13px; }
+/* ---- header: the shared clock/vibe motif ---- */
+header { text-align: center; margin-bottom: 28px; }
+#clock { font-size: 88px; font-weight: 200; letter-spacing: -3px; line-height: 1; }
+#date  { color: var(--muted); margin-top: 8px; font-size: 14px; }
+#vibe-row { margin-top: 14px; display: flex; gap: 14px; justify-content: center; align-items: center; }
+#vibe { color: var(--accent); font-size: 13px; }
 #vibe::before { content: "● "; }
-
-.folder { margin-bottom: 28px; }
-.folder h2 {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: lowercase;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 6px;
-  margin-bottom: 12px;
+#palette { display: inline-flex; gap: 5px; }
+#palette i {
+  width: 14px; height: 14px; border-radius: 4px; display: inline-block;
 }
 
-.links {
+/* ---- search ---- */
+#searchbar { display: flex; justify-content: center; margin-bottom: 26px; }
+#search {
+  width: min(640px, 90%);
+  background: color-mix(in oklab, var(--bg-dark) 75%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  padding: 12px 18px;
+  outline: none;
+  text-align: center;
+}
+#search:focus { border-color: var(--accent); box-shadow: 0 0 24px color-mix(in oklab, var(--accent) 25%, transparent); }
+#search::placeholder { color: var(--muted); opacity: .7; }
+
+/* ---- daily pill row (loose bookmarks-bar links) ---- */
+#daily { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 34px; }
+#daily a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--bg-hl) 70%, transparent);
+  border: 1px solid transparent;
+  color: var(--fg); text-decoration: none; font-size: 13px;
+}
+#daily a:hover { border-color: var(--accent); color: var(--accent); }
+#daily img { width: 16px; height: 16px; }
+
+/* ---- folder cards ---- */
+#bookmarks {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: start;
 }
+.folder {
+  background: color-mix(in oklab, var(--bg-dark) 72%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 45%, transparent);
+  border-radius: 14px;
+  padding: 14px 14px 8px;
+  backdrop-filter: blur(6px);
+}
+.folder h2 {
+  font-size: 12px; font-weight: 600; text-transform: lowercase;
+  color: var(--accent);
+  padding-bottom: 8px; margin-bottom: 6px;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 40%, transparent);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.folder h2 small { color: var(--muted); font-weight: 400; }
+.folder.inbox { border-color: var(--alt); }
+.folder.inbox h2 { color: var(--alt); }
 
 .links a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 8px; margin: 0 -4px;
   border-radius: 8px;
+  color: var(--fg); text-decoration: none; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.links a:hover { background: var(--bg-hl); color: var(--accent); }
+.links a.hit { background: color-mix(in oklab, var(--accent) 16%, transparent); }
+.links img { width: 15px; height: 15px; flex: none; }
+.links span { overflow: hidden; text-overflow: ellipsis; }
+.links select {
+  margin-left: auto; flex: none; max-width: 86px;
+  background: var(--bg); color: var(--muted);
+  border: 1px solid var(--border); border-radius: 6px;
+  font: inherit; font-size: 11px;
+  visibility: hidden;
+}
+.links a:hover select { visibility: visible; }
+.hidden { display: none; }
+
+/* ---- footer / add ---- */
+footer {
+  margin-top: 30px;
+  display: flex; gap: 22px; justify-content: center; align-items: center;
+  color: var(--muted); font-size: 12px;
+}
+kbd {
+  background: var(--bg-hl); border-radius: 4px; padding: 1px 6px;
+  font: inherit; color: var(--fg);
+}
+#add-btn {
+  background: var(--accent); color: var(--bg);
+  border: none; border-radius: 999px;
+  width: 26px; height: 26px; font: inherit; font-size: 16px; line-height: 1;
+  cursor: pointer;
+}
+
+#add-overlay {
+  position: fixed; inset: 0;
+  background: color-mix(in oklab, var(--bg) 60%, transparent);
+  backdrop-filter: blur(4px);
+  display: grid; place-items: center;
+}
+#add-form {
+  width: min(440px, 90vw);
   background: var(--bg-dark);
-  border: 1px solid transparent;
-  color: var(--fg);
-  text-decoration: none;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  padding: 22px;
+  display: grid; gap: 12px;
+  box-shadow: 0 0 60px color-mix(in oklab, var(--accent) 25%, transparent);
 }
-
-.links a:hover {
-  border-color: var(--border);
-  background: var(--bg-hl);
-  color: var(--accent);
+#add-form h3 { color: var(--accent); font-size: 14px; font-weight: 600; }
+#add-form input, #add-form select {
+  background: var(--bg); color: var(--fg);
+  border: 1px solid var(--border); border-radius: 8px;
+  font: inherit; font-size: 13px; padding: 9px 12px; outline: none;
 }
+#add-form input:focus { border-color: var(--accent); }
+#add-form .row { display: flex; gap: 10px; justify-content: flex-end; }
+#add-form button {
+  font: inherit; font-size: 13px; padding: 8px 16px;
+  border-radius: 8px; border: 1px solid var(--border); cursor: pointer;
+  background: var(--bg); color: var(--fg);
+}
+#add-form button[type=submit] { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 
-.links img { width: 16px; height: 16px; flex: none; }
+#toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-dark); color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 10px;
+  padding: 10px 18px; font-size: 13px;
+}

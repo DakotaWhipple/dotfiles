@@ -30,6 +30,12 @@ command -v zoxide >/dev/null && eval "$(zoxide init zsh --cmd cd)"  # cd learns 
 # prompt
 command -v starship >/dev/null && eval "$(starship init zsh)"
 
+# terminal home — greet fresh kitty shells (not nested shells or scripts)
+if [[ -o interactive && -z "${RICE_HOME_SHOWN:-}" && -n "${KITTY_WINDOW_ID:-}" ]]; then
+  export RICE_HOME_SHOWN=1
+  home
+fi
+
 # yazi: `y` opens the file manager and cd's to where you quit
 function y() {
   local tmp="$(mktemp -t yazi-cwd.XXXXXX)" cwd

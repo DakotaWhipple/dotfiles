@@ -14,7 +14,7 @@ theme-cycle        # next vibe (also: click the  logo in the bar)
 | cozy   | Catppuccin Mocha, soft pastels on warm dark grey (pinned) |
 | forest | mossy greens, warm wood light     |
 | space  | deep-night blues, indigo glow     |
-| pink   | dusty rose on midnight plum       |
+| pink   | hot pink on deep raspberry plum   |
 | retro  | amber CRT warmth, faded paper     |
 | techy  | electric blue on near-black       |
 
@@ -41,17 +41,35 @@ only derives the extra roles.
 - regenerates truecolor `LS_COLORS`/`EZA_COLORS` so `ls`/`ll`/`la` (eza),
   `cat` (bat) and fd follow the vibe
 - rewrites `chrome/theme.css` so the Rice Tab new-tab page follows too
+- refreshes the Übersicht desktop widgets
 - renders a wallpaper from the palette (`bin/theme-wallpaper`, ffmpeg
   gradient + vignette) and sets it
 
 Adding a vibe = one new `themes/<name>/seed.sh` + `theme-palette <name>`.
 Everything else derives.
 
-## Chrome
+## The three homes
 
-`chrome/` is an unpacked extension (load once: `chrome://extensions` →
-Developer mode → Load unpacked → `~/dotfiles/chrome`). It replaces the new
-tab with a clock + your bookmarks-bar folders, colored by the active vibe.
+Chrome new tab, fresh terminal, and the desktop share one visual language:
+big thin clock, vibe dot + name, palette strip, glassy cards over the
+wallpaper gradient.
+
+**Chrome** — `chrome/` is an unpacked extension (load once:
+`chrome://extensions` → Developer mode → Load unpacked → `~/dotfiles/chrome`).
+The new tab is a dashboard: clock, filter-as-you-type search (`/` to focus —
+enter opens the first hit, or web-searches), daily pill row, bookmark folder
+cards, and quick-add (`a`, default target: the **inbox** folder; file inbox
+items into folders right from the page). On first run it reorganizes the
+bookmarks bar into a curated set (`chrome/bookmarks-data.js`) — the old bar
+is preserved under Other Bookmarks → "archive (pre-rice 2026-06)".
+
+**Terminal** — `bin/home` greets each fresh kitty shell: block-digit clock,
+date, vibe + palette strip, jj status. Run `home` anytime.
+
+**Desktop** — Übersicht widgets in `ubersicht/` (symlinked by install.sh):
+`rice-clock` bottom-left, `rice-sys` (load/mem/disk/uptime) bottom-right,
+`rice-cal` (month, today highlighted) top-right. All read the active
+`colors.sh` and re-theme on `theme set`.
 
 ## Keybindings (mouse optional)
 
@@ -108,6 +126,6 @@ brew trust nikitabobko/tap && brew install --cask nikitabobko/tap/aerospace home
 ```
 
 `install.sh` is idempotent: symlinks configs into `~/.config` (backing up
-originals), adds `zsh/rice.zsh` to `.zshrc`, renders wallpapers, installs
-launchd agents for sketchybar/borders, hides the macOS menu bar, and
-applies the current vibe.
+originals), adds `zsh/rice.zsh` to `.zshrc`, installs Übersicht + links the
+rice widgets, renders wallpapers, installs launchd agents for
+sketchybar/borders, hides the macOS menu bar, and applies the current vibe.
