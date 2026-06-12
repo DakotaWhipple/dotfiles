@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# retro — Gruvbox (dark medium). Warm amber, olive and rust.
+THEME_NAME="retro"
+NVIM_COLORSCHEME="gruvbox"
+STARSHIP_PALETTE="retro"
+
+BG="282828"
+BG_DARK="1d2021"
+BG_HL="3c3836"
+FG="ebdbb2"
+FG_MUTED="a89984"
+ACCENT="fe8019"
+ACCENT_ALT="fabd2f"
+
+BLACK="282828";   BRIGHT_BLACK="928374"
+RED="cc241d";     BRIGHT_RED="fb4934"
+GREEN="98971a";   BRIGHT_GREEN="b8bb26"
+YELLOW="d79921";  BRIGHT_YELLOW="fabd2f"
+BLUE="458588";    BRIGHT_BLUE="83a598"
+MAGENTA="b16286"; BRIGHT_MAGENTA="d3869b"
+CYAN="689d6a";    BRIGHT_CYAN="8ec07c"
+WHITE="a89984";   BRIGHT_WHITE="ebdbb2"
+
+WALL0="1d2021"; WALL1="282828"; WALL2="3a3022"; WALL3="42321e"

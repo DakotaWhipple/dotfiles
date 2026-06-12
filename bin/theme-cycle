@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# theme-cycle — advance to the next vibe alphabetically (wraps around).
+DOTS="${DOTFILES:-$HOME/dotfiles}"
+cur="$(cat "$HOME/.config/theme/current" 2>/dev/null)"
+
+vibes=()
+for d in "$DOTS/themes"/*/; do vibes+=("$(basename "$d")"); done
+
+next="${vibes[0]}"
+for i in "${!vibes[@]}"; do
+  if [ "${vibes[$i]}" = "$cur" ]; then
+    next="${vibes[$(( (i + 1) % ${#vibes[@]} ))]}"
+    break
+  fi
+done
+
+exec "$DOTS/bin/theme" set "$next"

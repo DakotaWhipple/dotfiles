@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# theme-wallpaper <vibe> — render a wallpaper from the vibe's palette:
+# a soft diagonal gradient through the WALL* stops, vignetted, lightly
+# dithered to avoid banding. Writes ~/dotfiles/wallpapers/<vibe>.png
+set -euo pipefail
+
+DOTS="${DOTFILES:-$HOME/dotfiles}"
+name="${1:?usage: theme-wallpaper <vibe>}"
+colors="$DOTS/themes/$name/colors.sh"
+[ -f "$colors" ] || { echo "no such vibe: $name" >&2; exit 1; }
+# shellcheck source=/dev/null
+source "$colors"
+
+W=3456 H=2234
+mkdir -p "$DOTS/wallpapers"
+ffmpeg -y -loglevel error -f lavfi \
+  -i "gradients=s=${W}x${H}:c0=0x${WALL0}:c1=0x${WALL1}:c2=0x${WALL2}:c3=0x${WALL3}:nb_colors=4:x0=0:y0=0:x1=${W}:y1=${H}" \
+  -vf "noise=alls=5:allf=t,vignette=PI/5,format=rgb24" \
+  -frames:v 1 "$DOTS/wallpapers/$name.png"
+echo "rendered wallpapers/$name.png"

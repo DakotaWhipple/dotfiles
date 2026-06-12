@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# sketchybar — floating top bar, colored by the active vibe.
+# `theme set <vibe>` calls `sketchybar --reload`, which re-runs this file.
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+source "$HOME/.config/theme/colors.sh"
+PLUGIN_DIR="$CONFIG_DIR/plugins"
+
+sketchybar --bar \
+  height=34 \
+  position=top \
+  sticky=on \
+  y_offset=6 \
+  margin=10 \
+  corner_radius=11 \
+  border_width=2 \
+  border_color="0xff$BG_HL" \
+  color="0xf2$BG_DARK" \
+  padding_left=8 \
+  padding_right=8
+
+sketchybar --default \
+  icon.font="JetBrainsMono Nerd Font:Bold:14.0" \
+  icon.color="0xff$FG" \
+  label.font="JetBrainsMono Nerd Font:SemiBold:13.0" \
+  label.color="0xff$FG" \
+  icon.padding_left=6 \
+  icon.padding_right=4 \
+  label.padding_left=2 \
+  label.padding_right=8 \
+  background.corner_radius=7 \
+  background.height=22
+
+## left — vibe glyph (click to cycle vibes), workspaces, front app
+sketchybar --add item logo left \
+  --set logo icon=󰀵 icon.font.size=16 icon.color="0xff$ACCENT" \
+    label.drawing=off click_script="$HOME/dotfiles/bin/theme-cycle"
+
+sketchybar --add event aerospace_workspace_change
+for sid in 1 2 3 4 5 6 7 8 9; do
+  sketchybar --add item "space.$sid" left \
+    --subscribe "space.$sid" aerospace_workspace_change \
+    --set "space.$sid" \
+      label="$sid" \
+      icon.drawing=off \
+      label.padding_left=8 \
+      label.padding_right=8 \
+      background.color="0xff$ACCENT" \
+      background.drawing=off \
+      click_script="aerospace workspace $sid" \
+      script="$PLUGIN_DIR/aerospace.sh $sid"
+done
+
+sketchybar --add item front_app left \
+  --set front_app icon.drawing=off label.color="0xff$ACCENT_ALT" \
+    label.font="JetBrainsMono Nerd Font:Bold:13.0" \
+    script="$PLUGIN_DIR/front_app.sh" \
+  --subscribe front_app front_app_switched
+
+## right — clock, battery, volume
+sketchybar --add item clock right \
+  --set clock update_freq=10 icon=󰥔 icon.color="0xff$ACCENT" \
+    script="$PLUGIN_DIR/clock.sh"
+
+sketchybar --add item battery right \
+  --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \
+  --subscribe battery system_woke power_source_change
+
+sketchybar --add item volume right \
+  --set volume script="$PLUGIN_DIR/volume.sh" \
+  --subscribe volume volume_change
+
+sketchybar --update
+sketchybar --trigger aerospace_workspace_change \
+  FOCUSED_WORKSPACE="$(aerospace list-workspaces --focused 2>/dev/null)"
