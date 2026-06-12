@@ -56,10 +56,14 @@ sketchybar --add item front_app left \
     script="$PLUGIN_DIR/front_app.sh" \
   --subscribe front_app front_app_switched
 
-## right — clock, battery, volume
+## right — clock, battery, volume, notes
 sketchybar --add item clock right \
   --set clock update_freq=10 icon=󰥔 icon.color="0xff$ACCENT" \
     script="$PLUGIN_DIR/clock.sh"
+
+sketchybar --add item notes right \
+  --set notes update_freq=300 script="$PLUGIN_DIR/notes.sh" \
+    click_script="$HOME/dotfiles/bin/note-capture"
 
 sketchybar --add item battery right \
   --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \

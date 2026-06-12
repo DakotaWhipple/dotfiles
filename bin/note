@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# note — open or create a note in the vault.
+#   note            fzf over the whole vault (most recent first)
+#   note <title>    create a new note titled <title> and open it in nvim
+set -euo pipefail
+export ZK_NOTEBOOK_DIR="${ZK_NOTEBOOK_DIR:-$HOME/notes}"
+
+if [ $# -eq 0 ]; then
+  exec zk edit --interactive --sort modified-
+else
+  exec zk new --title "$*"
+fi

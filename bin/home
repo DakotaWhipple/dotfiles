@@ -51,6 +51,20 @@ for c in "$RED" "$YELLOW" "$GREEN" "$CYAN" "$BLUE" "$MAGENTA" "$ACCENT" "$ACCENT
 done
 echo
 
+# ---- notes: today's journal + open tasks ------------------------------------
+NOTES="${ZK_NOTEBOOK_DIR:-$HOME/notes}"
+if [ -d "$NOTES" ]; then
+  tasks=$(grep -rh -- '- \[ \]' "$NOTES" 2>/dev/null | wc -l | tr -d ' ')
+  if [ -f "$NOTES/journal/$(date +%Y-%m-%d).md" ]; then
+    jstat="journal started"
+  else
+    jstat="no journal yet — alt+n to jot"
+  fi
+  printf '  %s󰠮%s %s%s · %s open task%s%s\n' \
+    "$(fg "$ACCENT_ALT")" "$R" "$(fg "$FG_MUTED")" "$jstat" "$tasks" \
+    "$([ "$tasks" = 1 ] || echo s)" "$R"
+fi
+
 # ---- jj status (fast: no working-copy snapshot) ----------------------------
 if jj root --ignore-working-copy >/dev/null 2>&1; then
   line=$(jj log -r @ --no-graph --ignore-working-copy --color never \

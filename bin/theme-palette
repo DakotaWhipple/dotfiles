@@ -339,12 +339,24 @@ hl("@tag", {{ fg = c.kw }})
 hl("@tag.attribute", {{ fg = c.prop }})
 hl("@tag.delimiter", {{ fg = c.op }})
 hl("@comment", {{ link = "Comment" }})
+-- markdown / notes: one accent for headings (no rainbow), alt for links,
+-- finished tasks and quotes fade back — tuned for the ~/notes vault
 hl("@markup.heading", {{ fg = c.accent, bold = true }})
 hl("@markup.strong", {{ bold = true }})
 hl("@markup.italic", {{ italic = true }})
 hl("@markup.raw", {{ fg = c.str }})
 hl("@markup.link", {{ fg = c.alt, underline = true }})
+hl("@markup.link.label", {{ fg = c.alt }})
+hl("@markup.link.url", {{ fg = c.muted, underline = true }})
 hl("@markup.list", {{ fg = c.accent }})
+hl("@markup.list.checked", {{ fg = c.comment }})
+hl("@markup.list.unchecked", {{ fg = c.accent }})
+hl("@markup.quote", {{ fg = c.muted, italic = true }})
+for i = 1, 6 do
+  hl(("RenderMarkdownH%dBg"):format(i), {{ bg = c.bg_dark }})
+end
+hl("RenderMarkdownCode", {{ bg = c.bg_dark }})
+hl("RenderMarkdownBullet", {{ fg = c.accent }})
 hl("@lsp.type.property", {{ link = "@property" }})
 hl("@lsp.type.parameter", {{ link = "@variable.parameter" }})
 

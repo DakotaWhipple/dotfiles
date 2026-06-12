@@ -20,6 +20,7 @@ link "$DOTS/aerospace"               "$HOME/.config/aerospace"
 link "$DOTS/sketchybar"              "$HOME/.config/sketchybar"
 link "$DOTS/borders"                 "$HOME/.config/borders"
 link "$DOTS/yazi"                    "$HOME/.config/yazi"
+link "$DOTS/zk"                      "$HOME/.config/zk"
 
 chmod +x "$DOTS/bin/"* "$DOTS/sketchybar/sketchybarrc" "$DOTS/sketchybar/plugins/"* "$DOTS/borders/bordersrc"
 
@@ -31,9 +32,15 @@ fi
 
 ## CLI upgrades the shell aliases expect
 if command -v brew >/dev/null; then
-  for t in eza fd bat zoxide fzf starship atuin; do
+  for t in eza fd bat zoxide fzf starship atuin zk; do
     command -v "$t" >/dev/null || brew install -q "$t"
   done
+fi
+
+## note vault — ~/notes (zk; see zk/config.toml and bin/{note,jot,notes})
+mkdir -p "$HOME/notes/journal"
+if command -v jj >/dev/null && [ ! -d "$HOME/notes/.jj" ]; then
+  jj git init "$HOME/notes" >/dev/null && echo "jj repo: ~/notes"
 fi
 
 ## desktop widgets — Übersicht renders the rice widgets over the wallpaper

@@ -3,6 +3,7 @@
 export DOTFILES="$HOME/dotfiles"
 export PATH="$DOTFILES/bin:$HOME/.local/bin:$PATH"
 export STARSHIP_CONFIG="$DOTFILES/starship/starship.toml"
+export ZK_NOTEBOOK_DIR="$HOME/notes"  # note vault — `note`, `jot`, `notes` (bin/)
 
 # vi-mode editing (ESC -> normal mode; starship shows ❮ in normal mode)
 bindkey -v

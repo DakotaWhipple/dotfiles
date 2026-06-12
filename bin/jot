@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# jot — append a timestamped line to today's journal note (under "## Log").
+#   jot some thought      append "- HH:MM some thought"
+#   jot                   read one line from stdin
+set -euo pipefail
+NOTES="${ZK_NOTEBOOK_DIR:-$HOME/notes}"
+export ZK_NOTEBOOK_DIR="$NOTES"
+
+text="$*"
+if [ -z "$text" ]; then
+  IFS= read -r text || true
+fi
+[ -n "$text" ] || exit 0
+
+f="$NOTES/journal/$(date +%Y-%m-%d).md"
+[ -f "$f" ] || zk new --no-input --print-path "$NOTES/journal" >/dev/null
+
+entry="- $(date +%H:%M) $text"
+if grep -q '^## Log' "$f"; then
+  # insert at the end of the "## Log" section, before the next heading
+  tmp="$(mktemp)"
+  awk -v entry="$entry" '
+    {
+      if (inlog && !added) {
+        if ($0 ~ /^$/) { buf[nbuf++] = $0; next }
+        if ($0 ~ /^## /) { print entry; print ""; added = 1; inlog = 0 }
+        else { for (i = 0; i < nbuf; i++) print buf[i]; nbuf = 0 }
+      }
+      print
+      if (!added && $0 == "## Log") inlog = 1
+    }
+    END { if (inlog && !added) print entry }
+  ' "$f" > "$tmp"
+  mv "$tmp" "$f"
+else
+  printf '%s\n' "$entry" >> "$f"
+fi

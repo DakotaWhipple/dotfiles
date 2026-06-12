@@ -69,6 +69,7 @@ alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
 # apps
 alt-enter = 'exec-and-forget open -na kitty'
+alt-n = 'exec-and-forget $HOME/dotfiles/bin/note-capture'   # quick jot -> daily note
 
 alt-shift-semicolon = 'mode service'
 
@@ -89,4 +90,10 @@ run = 'layout floating'
 
 [[on-window-detected]]
 if.app-id = 'com.apple.finder'
+run = 'layout floating'
+
+# the note-capture prompt is a one-shot kitty window — float it
+[[on-window-detected]]
+if.app-id = 'net.kovidgoyal.kitty'
+if.window-title-regex-substring = 'note-capture'
 run = 'layout floating'

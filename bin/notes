@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# notes — full-text search across the vault, fzf-picked, opens in nvim.
+#   notes             browse everything (most recent first)
+#   notes <query>     full-text match first, then pick
+set -euo pipefail
+export ZK_NOTEBOOK_DIR="${ZK_NOTEBOOK_DIR:-$HOME/notes}"
+
+if [ $# -eq 0 ]; then
+  exec zk edit --interactive --sort modified-
+else
+  exec zk edit --interactive --match "$*"
+fi

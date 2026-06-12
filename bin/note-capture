@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# note-capture — pop a floating kitty prompt; the line you type lands in
+# today's journal via `jot`. Bound to alt-n in aerospace, which floats the
+# window by its "note-capture" title.
+#
+#   note-capture            open the capture window
+#   note-capture --prompt   (internal) run the prompt inside that window
+set -euo pipefail
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
+if [ "${1:-}" = "--prompt" ]; then
+  # themed one-line prompt; empty input or ctrl-c aborts
+  [ -f "$HOME/.config/theme/colors.sh" ] && . "$HOME/.config/theme/colors.sh"
+  accent="${ACCENT:-cccccc}" # bare hex, no '#' (palette convention)
+  r=$((16#${accent:0:2})) g=$((16#${accent:2:2})) b=$((16#${accent:4:2}))
+  printf '\n  \033[38;2;%d;%d;%dm✏ jot\033[0m ▸ ' "$r" "$g" "$b"
+  IFS= read -r line || exit 0
+  [ -n "$line" ] && "$(dirname "$SELF")/jot" "$line"
+  exit 0
+fi
+
+# prefer a new OS window from the running kitty (instant); else fresh instance
+for sock in /tmp/kitty-*; do
+  [ -S "$sock" ] || continue
+  if kitten @ --to "unix:$sock" launch --type=os-window \
+       --title note-capture --os-window-title note-capture \
+       -- "$SELF" --prompt 2>/dev/null; then
+    exit 0
+  fi
+done
+exec open -na kitty --args --title=note-capture "$SELF" --prompt

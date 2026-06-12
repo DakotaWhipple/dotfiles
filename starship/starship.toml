@@ -61,56 +61,6 @@ success_symbol = '[❯](bold accent)'
 error_symbol = '[❯](bold red)'
 vimcmd_symbol = '[❮](bold green)'
 
-[palettes.cozy]
-accent = '#cba6f7'
-accent2 = '#89b4fa'
-muted = '#a6adc8'
-red = '#f38ba8'
-green = '#a6e3a1'
-yellow = '#f9e2af'
-magenta = '#f5c2e7'
-cyan = '#94e2d5'
-
-[palettes.forest]
-accent = '#80b930'
-accent2 = '#00bba4'
-muted = '#989281'
-red = '#f88253'
-green = '#67c060'
-yellow = '#ddca37'
-magenta = '#f6799e'
-cyan = '#00d4c0'
-
-[palettes.pink]
-accent = '#fb69ab'
-accent2 = '#ca7aed'
-muted = '#9e8c96'
-red = '#ff7681'
-green = '#9fb500'
-yellow = '#ffb83c'
-magenta = '#eb78cc'
-cyan = '#00cafc'
-
-[palettes.retro]
-accent = '#f68000'
-accent2 = '#be9f00'
-muted = '#989281'
-red = '#ff7969'
-green = '#8abb24'
-yellow = '#f7be00'
-magenta = '#f772b5'
-cyan = '#00d7a2'
-
-[palettes.space]
-accent = '#71a3ff'
-accent2 = '#bb81f7'
-muted = '#8b92a2'
-red = '#fc7499'
-green = '#00c686'
-yellow = '#bdd544'
-magenta = '#db7fe1'
-cyan = '#00cfdf'
-
 [palettes.techy]
 accent = '#60a7ff'
 accent2 = '#d26ffb'
