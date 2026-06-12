@@ -12,9 +12,13 @@ bindkey '^a' beginning-of-line
 bindkey '^e' end-of-line
 bindkey '^?' backward-delete-char
 
-# fzf: keybindings (ctrl-r history, ctrl-t files) + vibe colors
+# fzf: keybindings (ctrl-t files) + vibe colors
 command -v fzf >/dev/null && source <(fzf --zsh)
 [ -f "$HOME/.config/theme/fzf.sh" ] && source "$HOME/.config/theme/fzf.sh"
+
+# atuin: searchable shell history — takes over ctrl-r (after fzf, so it wins);
+# up-arrow stays plain zsh so vi-mode k/j history feels normal
+command -v atuin >/dev/null && eval "$(atuin init zsh --disable-up-arrow)"
 
 # everyday commands, upgraded + vibe-colored (LS_COLORS/EZA_COLORS follow the theme)
 [ -f "$HOME/.config/theme/lscolors.sh" ] && source "$HOME/.config/theme/lscolors.sh"

@@ -1,7 +1,8 @@
-// Curated bookmark structure applied once by newtab.js (the old bar is moved
+// Curated bookmark structure applied by newtab.js (the old bar is moved
 // wholesale into Other Bookmarks → "archive (pre-rice 2026-06)", never deleted).
 // Loose BAR links render as the daily pill row; folders render as cards.
-// "inbox" is the quick-add target — file things out of it from the new tab.
+// Add-only sync: new entries here are created on already-migrated profiles
+// too, so this file stays the source of truth for the curated set.
 
 const RICE_ARCHIVE_TITLE = "archive (pre-rice 2026-06)";
 
@@ -10,6 +11,7 @@ const RICE_BAR = [
   ["reddit", "https://www.reddit.com/"],
   ["youtube", "https://www.youtube.com/"],
   ["gmail", "https://mail.google.com/"],
+  ["gemini", "https://gemini.google.com/"],
   ["whatsapp", "https://web.whatsapp.com/"],
   ["random wiki", "https://en.wikipedia.org/wiki/Special:Random"],
 ];
@@ -59,6 +61,15 @@ const RICE_FOLDERS = [
     ["atomic design", "https://atomicdesign.bradfrost.com/"],
     ["palettum", "https://palettum.com/"],
     ["coolors", "https://coolors.co/"],
+  ]],
+  ["streaming", [
+    ["netflix", "https://www.netflix.com/"],
+    ["twitch", "https://www.twitch.tv/"],
+    ["prime video", "https://www.primevideo.com/"],
+    ["hbo max", "https://play.hbomax.com/"],
+    ["disney+", "https://www.disneyplus.com/"],
+    ["hulu", "https://www.hulu.com/"],
+    ["crunchyroll", "https://www.crunchyroll.com/"],
   ]],
   ["tools & media", [
     ["anna's archive", "https://annas-archive.li/"],

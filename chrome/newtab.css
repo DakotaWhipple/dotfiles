@@ -48,7 +48,7 @@ header { text-align: center; margin-bottom: 28px; }
 #search::placeholder { color: var(--muted); opacity: .7; }
 
 /* ---- daily pill row (loose bookmarks-bar links) ---- */
-#daily { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 34px; }
+#daily { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 16px; }
 #daily a {
   display: flex; align-items: center; gap: 8px;
   padding: 9px 16px;
@@ -59,6 +59,19 @@ header { text-align: center; margin-bottom: 28px; }
 }
 #daily a:hover { border-color: var(--accent); color: var(--accent); }
 #daily img { width: 16px; height: 16px; }
+
+/* ---- rediscover row (random picks from the catalog) ---- */
+#rediscover {
+  display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; align-items: center;
+  margin-bottom: 30px; font-size: 12px; min-height: 16px;
+}
+#rediscover > span { color: var(--muted); }
+#rediscover a {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); text-decoration: none;
+}
+#rediscover a:hover { color: var(--accent); }
+#rediscover img { width: 13px; height: 13px; }
 
 /* ---- folder cards ---- */
 #bookmarks {
@@ -84,6 +97,7 @@ header { text-align: center; margin-bottom: 28px; }
 .folder h2 small { color: var(--muted); font-weight: 400; }
 .folder.inbox { border-color: var(--alt); }
 .folder.inbox h2 { color: var(--alt); }
+.folder.recent { border-color: color-mix(in oklab, var(--accent) 60%, transparent); }
 
 .links a {
   display: flex; align-items: center; gap: 10px;
@@ -106,52 +120,17 @@ header { text-align: center; margin-bottom: 28px; }
 .links a:hover select { visibility: visible; }
 .hidden { display: none; }
 
-/* ---- footer / add ---- */
+/* ---- footer ---- */
 footer {
   margin-top: 30px;
   display: flex; gap: 22px; justify-content: center; align-items: center;
   color: var(--muted); font-size: 12px;
 }
+footer b { color: var(--accent); font-weight: 400; }
 kbd {
   background: var(--bg-hl); border-radius: 4px; padding: 1px 6px;
   font: inherit; color: var(--fg);
 }
-#add-btn {
-  background: var(--accent); color: var(--bg);
-  border: none; border-radius: 999px;
-  width: 26px; height: 26px; font: inherit; font-size: 16px; line-height: 1;
-  cursor: pointer;
-}
-
-#add-overlay {
-  position: fixed; inset: 0;
-  background: color-mix(in oklab, var(--bg) 60%, transparent);
-  backdrop-filter: blur(4px);
-  display: grid; place-items: center;
-}
-#add-form {
-  width: min(440px, 90vw);
-  background: var(--bg-dark);
-  border: 1px solid var(--accent);
-  border-radius: 14px;
-  padding: 22px;
-  display: grid; gap: 12px;
-  box-shadow: 0 0 60px color-mix(in oklab, var(--accent) 25%, transparent);
-}
-#add-form h3 { color: var(--accent); font-size: 14px; font-weight: 600; }
-#add-form input, #add-form select {
-  background: var(--bg); color: var(--fg);
-  border: 1px solid var(--border); border-radius: 8px;
-  font: inherit; font-size: 13px; padding: 9px 12px; outline: none;
-}
-#add-form input:focus { border-color: var(--accent); }
-#add-form .row { display: flex; gap: 10px; justify-content: flex-end; }
-#add-form button {
-  font: inherit; font-size: 13px; padding: 8px 16px;
-  border-radius: 8px; border: 1px solid var(--border); cursor: pointer;
-  background: var(--bg); color: var(--fg);
-}
-#add-form button[type=submit] { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 
 #toast {
   position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);

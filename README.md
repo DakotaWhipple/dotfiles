@@ -57,11 +57,13 @@ wallpaper gradient.
 **Chrome** — `chrome/` is an unpacked extension (load once:
 `chrome://extensions` → Developer mode → Load unpacked → `~/dotfiles/chrome`).
 The new tab is a dashboard: clock, filter-as-you-type search (`/` to focus —
-enter opens the first hit, or web-searches), daily pill row, bookmark folder
-cards, and quick-add (`a`, default target: the **inbox** folder; file inbox
-items into folders right from the page). On first run it reorganizes the
-bookmarks bar into a curated set (`chrome/bookmarks-data.js`) — the old bar
-is preserved under Other Bookmarks → "archive (pre-rice 2026-06)".
+enter opens the first hit, or web-searches), daily pill row, a **rediscover**
+row (random picks from the catalog), and bookmark folder cards. Saving is
+Chrome's own ★ star — new saves surface in the **recent** card, where a
+hover control files them into folders (same for the **inbox** folder).
+On first run it reorganizes the bookmarks bar into a curated set
+(`chrome/bookmarks-data.js`; new entries there sync in add-only later) —
+the old bar is preserved under Other Bookmarks → "archive (pre-rice 2026-06)".
 
 **Terminal** — `bin/home` greets each fresh kitty shell: block-digit clock,
 date, vibe + palette strip, jj status. Run `home` anytime.
@@ -107,7 +109,7 @@ date, vibe + palette strip, jj status. Run `home` anytime.
 `esc`/`enter` leave.
 
 **Shell** — vi-mode (`esc` for normal mode, prompt shows `❮`), `ctrl+r`
-fzf history, `ctrl+t` fzf files, `y` opens yazi and cd's where you quit,
+atuin history search, `ctrl+t` fzf files, `y` opens yazi and cd's where you quit,
 `cd` is zoxide (frecency jumps), `ls/ll/la/lt` are eza with vibe colors,
 `cat` is bat. The prompt shows the jj change id + bookmark in jj repos.
 

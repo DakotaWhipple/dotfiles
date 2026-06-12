@@ -31,7 +31,7 @@ fi
 
 ## CLI upgrades the shell aliases expect
 if command -v brew >/dev/null; then
-  for t in eza fd bat zoxide fzf starship; do
+  for t in eza fd bat zoxide fzf starship atuin; do
     command -v "$t" >/dev/null || brew install -q "$t"
   done
 fi

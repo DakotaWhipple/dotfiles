@@ -23,28 +23,15 @@
     </div>
 
     <nav id="daily"></nav>
+    <nav id="rediscover"></nav>
     <section id="bookmarks"></section>
 
     <footer>
       <span><kbd>/</kbd> filter</span>
-      <span><kbd>a</kbd> add bookmark</span>
       <span><kbd>esc</kbd> clear</span>
-      <button id="add-btn" title="add bookmark">+</button>
+      <span>★ chrome's star saves — new saves surface in <b>recent</b></span>
     </footer>
   </main>
-
-  <div id="add-overlay" hidden>
-    <form id="add-form">
-      <h3>add bookmark</h3>
-      <input id="add-url" type="text" placeholder="url" autocomplete="off" spellcheck="false" required>
-      <input id="add-title" type="text" placeholder="title (optional — defaults to hostname)" autocomplete="off">
-      <select id="add-folder"></select>
-      <div class="row">
-        <button type="submit">save</button>
-        <button type="button" id="add-cancel">cancel</button>
-      </div>
-    </form>
-  </div>
 
   <div id="toast" hidden></div>
 

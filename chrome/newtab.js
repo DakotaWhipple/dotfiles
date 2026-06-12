@@ -1,7 +1,9 @@
 // Rice Tab — themed dashboard over chrome.bookmarks.
 // One-time migration (see bookmarks-data.js): the old bookmarks bar is moved
 // into Other Bookmarks → archive, then the curated structure is created.
-// Keys: "/" filter, "a" add (lands in inbox by default), esc clear.
+// After that, ensureCurated() syncs new bookmarks-data.js entries in (add-only).
+// Saving is Chrome's own ★ star — new saves surface in the "recent" card,
+// where they can be filed into folders. Keys: "/" filter, esc clear.
 
 const $ = (id) => document.getElementById(id);
 
@@ -63,9 +65,27 @@ async function migrateOnce() {
   toast(`bookmarks reorganized — old set kept in “${RICE_ARCHIVE_TITLE}”`);
 }
 
-let folders = []; // top-level folders of the bar, for the add-dialog + filing
+// add-only sync: anything new in bookmarks-data.js (a pill, a folder, a link
+// inside a folder) is created on profiles that already migrated. Never deletes.
+async function ensureCurated() {
+  const bar = await bookmarksBar();
+  const barUrls = new Set(bar.children.filter((n) => n.url).map((n) => n.url));
+  for (const [title, url] of RICE_BAR) {
+    if (!barUrls.has(url)) await chrome.bookmarks.create({ parentId: bar.id, title, url });
+  }
+  for (const [name, links] of RICE_FOLDERS) {
+    const f = bar.children.find((n) => n.children && n.title === name) ??
+      await chrome.bookmarks.create({ parentId: bar.id, title: name });
+    const urls = new Set((f.children ?? []).map((n) => n.url));
+    for (const [title, url] of links) {
+      if (!urls.has(url)) await chrome.bookmarks.create({ parentId: f.id, title, url });
+    }
+  }
+}
 
-function link(n, inboxOf) {
+let folders = []; // top-level folders of the bar, for filing + rediscover
+
+function link(n, withFile) {
   const a = document.createElement("a");
   a.href = n.url;
   const img = document.createElement("img");
@@ -74,8 +94,8 @@ function link(n, inboxOf) {
   label.textContent = n.title || n.url;
   a.append(img, label);
   a.dataset.text = `${n.title} ${n.url}`.toLowerCase();
-  if (inboxOf) {
-    // file-out control: visible on hover, moves the bookmark out of inbox
+  if (withFile) {
+    // file control: visible on hover, moves the bookmark into a folder
     const sel = document.createElement("select");
     sel.append(new Option("file ▸", ""));
     for (const f of folders.filter((f) => f.title !== "inbox")) {
@@ -93,39 +113,72 @@ function link(n, inboxOf) {
   return a;
 }
 
+function card(title, nodes, { cls = "", hint = "", file = false } = {}) {
+  const sec = document.createElement("div");
+  sec.className = `folder ${cls}`.trim();
+  const h = document.createElement("h2");
+  h.textContent = title;
+  const small = document.createElement("small");
+  small.textContent = hint || nodes.length;
+  h.append(small);
+  const div = document.createElement("div");
+  div.className = "links";
+  div.append(...nodes.map((n) => link(n, file)));
+  sec.append(h, div);
+  return sec;
+}
+
+// last saves anywhere (chrome's ★ included), minus the pre-rice archive —
+// this is how new links enter the page without any custom add dialog
+async function recentAdds(n = 8) {
+  const [tree, recent] = await Promise.all([
+    chrome.bookmarks.getTree(), chrome.bookmarks.getRecent(50),
+  ]);
+  const archived = new Set();
+  (function mark(node, inArch) {
+    if (inArch) archived.add(node.id);
+    for (const c of node.children ?? []) {
+      mark(c, inArch || node.title === RICE_ARCHIVE_TITLE);
+    }
+  })(tree[0], false);
+  return recent.filter((b) => !archived.has(b.id)).slice(0, n);
+}
+
+// three random picks from the deep catalog — resurfaces links you forgot
+function rediscover() {
+  const pool = folders.filter((f) => f.title !== "inbox")
+    .flatMap((f) => f.children.filter((n) => n.url));
+  const row = $("rediscover");
+  row.replaceChildren();
+  if (pool.length < 6) return;
+  const tag = document.createElement("span");
+  tag.textContent = "rediscover ▸";
+  const picks = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+  row.append(tag, ...picks.map((n) => link(n)));
+}
+
 async function render() {
   const bar = await bookmarksBar();
   folders = bar.children.filter((n) => n.children);
 
-  const daily = $("daily");
-  daily.replaceChildren(...bar.children.filter((n) => n.url).map((n) => link(n)));
+  $("daily").replaceChildren(...bar.children.filter((n) => n.url).map((n) => link(n)));
+  rediscover();
 
   const root = $("bookmarks");
   root.replaceChildren();
-  const ordered = [...folders].sort((a, b) =>
-    (b.title === "inbox" && b.children.length) - (a.title === "inbox" && a.children.length));
-  for (const folder of ordered) {
-    if (folder.title === "inbox" && !folder.children.length) continue;
-    const sec = document.createElement("div");
-    sec.className = "folder" + (folder.title === "inbox" ? " inbox" : "");
-    const h = document.createElement("h2");
-    h.textContent = folder.title;
-    const count = document.createElement("small");
-    count.textContent = folder.title === "inbox" ? "file me ▸" : folder.children.length;
-    h.append(count);
-    const div = document.createElement("div");
-    div.className = "links";
-    div.append(...folder.children.filter((n) => n.url)
-      .map((n) => link(n, folder.title === "inbox")));
-    sec.append(h, div);
-    root.append(sec);
-  }
 
-  // fill the add-dialog folder list (inbox first = default target)
-  const sel = $("add-folder");
-  sel.replaceChildren();
-  for (const f of [...folders].sort((a, b) => (b.title === "inbox") - (a.title === "inbox"))) {
-    sel.append(new Option(`→ ${f.title}`, f.id));
+  const recent = await recentAdds();
+  if (recent.length) {
+    root.append(card("recent", recent, { cls: "recent", hint: "★ lands here — file ▸", file: true }));
+  }
+  const inbox = folders.find((f) => f.title === "inbox");
+  if (inbox?.children.length) {
+    root.append(card("inbox", inbox.children.filter((n) => n.url),
+      { cls: "inbox", hint: "file me ▸", file: true }));
+  }
+  for (const f of folders) {
+    if (f.title === "inbox") continue;
+    root.append(card(f.title, f.children.filter((n) => n.url)));
   }
   applyFilter();
 }
@@ -143,6 +196,7 @@ function applyFilter() {
   for (const sec of document.querySelectorAll(".folder")) {
     sec.classList.toggle("hidden", q && !sec.querySelector(".links a:not(.hidden)"));
   }
+  $("rediscover").classList.toggle("hidden", !!q);
   if (first) first.classList.add("hit");
   return first;
 }
@@ -161,43 +215,10 @@ $("search").addEventListener("keydown", (e) => {
   }
 });
 
-// ---- quick add -----------------------------------------------------------
-function openAdd() {
-  $("add-overlay").hidden = false;
-  $("add-url").focus();
-}
-function closeAdd() {
-  $("add-overlay").hidden = true;
-  $("add-form").reset();
-}
-$("add-btn").addEventListener("click", openAdd);
-$("add-cancel").addEventListener("click", closeAdd);
-$("add-overlay").addEventListener("click", (e) => {
-  if (e.target === $("add-overlay")) closeAdd();
-});
-$("add-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  let url = $("add-url").value.trim();
-  if (!/^[a-z]+:\/\//i.test(url)) url = "https://" + url;
-  let title = $("add-title").value.trim();
-  try { title ||= new URL(url).hostname.replace(/^www\./, ""); } catch { /* keep as-is */ }
-  const sel = $("add-folder");
-  await chrome.bookmarks.create({ parentId: sel.value, title, url });
-  closeAdd();
-  toast(`added to ${sel.options[sel.selectedIndex].text}`);
-  render();
-});
-
 // ---- keys / toast ----------------------------------------------------------
 document.addEventListener("keydown", (e) => {
-  const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName);
-  if (!$("add-overlay").hidden) {
-    if (e.key === "Escape") closeAdd();
-    return;
-  }
-  if (typing) return;
+  if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName)) return;
   if (e.key === "/") { e.preventDefault(); $("search").focus(); }
-  if (e.key === "a") { e.preventDefault(); openAdd(); }
 });
 
 let toastTimer;
@@ -208,4 +229,4 @@ function toast(msg) {
   toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3500);
 }
 
-migrateOnce().then(render);
+migrateOnce().then(ensureCurated).then(render);
