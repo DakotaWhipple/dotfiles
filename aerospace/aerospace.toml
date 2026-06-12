@@ -10,8 +10,10 @@ default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # keep sketchybar's workspace indicator in sync
-exec-on-workspace-change = ['/bin/bash', '-c',
-  '$HOME/.local/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+exec-on-workspace-change = [
+  '/bin/bash',
+  '-c',
+  '$HOME/.local/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 
 [gaps]
@@ -20,7 +22,7 @@ inner.vertical = 10
 outer.left = 10
 outer.bottom = 10
 outer.right = 10
-outer.top = 46   # room for sketchybar
+outer.top = 16        # sketchybar y_offset (6) + outer gap (10)
 
 [mode.main.binding]
 # focus / move windows — vim motions
@@ -72,7 +74,7 @@ alt-shift-semicolon = 'mode service'
 
 [mode.service.binding]
 esc = ['reload-config', 'mode main']
-r = ['flatten-workspace-tree', 'mode main']   # reset layout
+r = ['flatten-workspace-tree', 'mode main']                # reset layout
 f = ['layout floating tiling', 'mode main']
 backspace = ['close-all-windows-but-current', 'mode main']
 alt-shift-h = ['join-with left', 'mode main']
