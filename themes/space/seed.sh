@@ -1,0 +1,10 @@
+# space — deep-night blues, indigo glow.
+DESC="Deep-night blues, indigo glow."
+NVIM_COLORSCHEME="rice-space"
+L_BG="0.225"
+C_BG="0.022"
+H_BG="265"
+H_ACCENT="262"
+H_ACCENT_ALT="305"
+SAT="1.0"
+COHESION="0.14"

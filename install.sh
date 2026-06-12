@@ -29,6 +29,13 @@ if ! grep -q 'dotfiles/zsh/rice.zsh' "$HOME/.zshrc" 2>/dev/null; then
   echo "added rice.zsh to ~/.zshrc"
 fi
 
+## CLI upgrades the shell aliases expect
+if command -v brew >/dev/null; then
+  for t in eza fd bat zoxide fzf starship; do
+    command -v "$t" >/dev/null || brew install -q "$t"
+  done
+fi
+
 ## wallpapers
 for d in "$DOTS/themes"/*/; do
   name="$(basename "$d")"
@@ -37,6 +44,10 @@ done
 
 ## hand the macOS menu bar over to sketchybar
 defaults write NSGlobalDomain _HIHideMenuBar -bool true
+
+## hide the stock desktop widgets — sketchybar owns ambient status
+defaults write com.apple.WindowManager StandardHideWidgets -bool true
+defaults write com.apple.WindowManager StageManagerHideWidgets -bool true
 
 ## Rectangle conflicts with AeroSpace — retire it
 if pgrep -xq Rectangle; then
@@ -79,3 +90,6 @@ agent com.koda.borders "$HOME/.local/bin/borders"
 echo
 echo "done. open AeroSpace and Homerow once to grant Accessibility permission:"
 echo "  open -a AeroSpace && open -a Homerow"
+echo
+echo "chrome: load the vibe new-tab once via chrome://extensions ->"
+echo "  'Developer mode' -> 'Load unpacked' -> $DOTS/chrome"

@@ -1,0 +1,62 @@
+/* layout only — every color comes from the generated theme.css variables */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background-image: radial-gradient(ellipse at 20% 0%, var(--wall2) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 100%, var(--wall3) 0%, transparent 50%);
+}
+
+main { width: min(880px, 92vw); padding: 48px 0; }
+
+header { text-align: center; margin-bottom: 40px; }
+#clock { font-size: 64px; font-weight: 700; letter-spacing: -2px; }
+#date  { color: var(--muted); margin-top: 4px; }
+#vibe  { color: var(--accent); margin-top: 10px; font-size: 13px; }
+#vibe::before { content: "● "; }
+
+.folder { margin-bottom: 28px; }
+.folder h2 {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: lowercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+}
+
+.links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.links a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-dark);
+  border: 1px solid transparent;
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.links a:hover {
+  border-color: var(--border);
+  background: var(--bg-hl);
+  color: var(--accent);
+}
+
+.links img { width: 16px; height: 16px; flex: none; }

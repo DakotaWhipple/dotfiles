@@ -1,0 +1,11 @@
+# pink — dusty rose on midnight plum.
+DESC="Dusty rose on midnight plum."
+NVIM_COLORSCHEME="rice-pink"
+L_BG="0.21"
+C_BG="0.018"
+H_BG="300"
+H_FG="310"
+H_ACCENT="22"
+H_ACCENT_ALT="295"
+SAT="0.78"
+COHESION="0.15"

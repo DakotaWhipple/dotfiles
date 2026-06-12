@@ -1,19 +1,31 @@
 "$schema" = 'https://starship.rs/config-schema.json'
-# Prompt colors follow the active vibe — `theme` rewrites the palette line.
-palette = 'techy'
+# Prompt colors follow the active vibe — `theme` rewrites the palette line,
+# and theme-palette regenerates the palette blocks at the bottom of this file.
+palette = 'cozy'
 add_newline = true
 
-format = """$directory$git_branch$git_status$python$nodejs$rust$golang$cmd_duration$line_break$character"""
+format = """$directory${custom.jj}$git_branch$git_status$python$nodejs$rust$golang$cmd_duration$line_break$character"""
 
 [directory]
 style = 'bold accent'
 truncation_length = 3
 truncate_to_repo = true
 
+# jj repos: show change id + bookmarks instead of git's detached HEAD
+[custom.jj]
+command = '''jj log -r@ -n1 --no-graph --ignore-working-copy --color never -T 'change_id.shortest(8) ++ if(bookmarks, " " ++ bookmarks.join(","), "") ++ if(empty, " (empty)", "")' '''
+when = 'jj root --ignore-working-copy'
+shell = ['sh']
+symbol = '󱗆 '
+style = 'accent2'
+format = '[$symbol$output]($style) '
+
 [git_branch]
 symbol = ' '
 style = 'accent2'
 format = '[$symbol$branch]($style) '
+# jj colocated repos sit on a detached HEAD; custom.jj covers them instead
+only_attached = true
 
 [git_status]
 style = 'muted'
@@ -56,43 +68,55 @@ muted = '#a6adc8'
 red = '#f38ba8'
 green = '#a6e3a1'
 yellow = '#f9e2af'
-
-[palettes.space]
-accent = '#7aa2f7'
-accent2 = '#bb9af7'
-muted = '#565f89'
-red = '#f7768e'
-green = '#9ece6a'
-yellow = '#e0af68'
+magenta = '#f5c2e7'
+cyan = '#94e2d5'
 
 [palettes.forest]
-accent = '#a7c080'
-accent2 = '#7fbbb3'
-muted = '#859289'
-red = '#e67e80'
-green = '#a7c080'
-yellow = '#dbbc7f'
+accent = '#8eb367'
+accent2 = '#45b7a4'
+muted = '#989281'
+red = '#e09172'
+green = '#80b97a'
+yellow = '#d6ca76'
+magenta = '#e08ba1'
+cyan = '#5ccebe'
 
 [palettes.pink]
-accent = '#ebbcba'
-accent2 = '#c4a7e7'
-muted = '#908caa'
-red = '#eb6f92'
-green = '#9ccfd8'
-yellow = '#f6c177'
+accent = '#dd8b88'
+accent2 = '#a695d8'
+muted = '#978e9e'
+red = '#df8f8c'
+green = '#98b36f'
+yellow = '#e5c27c'
+magenta = '#d28fb9'
+cyan = '#73ccad'
 
 [palettes.retro]
-accent = '#fe8019'
-accent2 = '#fabd2f'
-muted = '#a89984'
-red = '#fb4934'
-green = '#b8bb26'
-yellow = '#fabd2f'
+accent = '#e58b49'
+accent2 = '#bba02d'
+muted = '#989281'
+red = '#ef8678'
+green = '#91b757'
+yellow = '#ecc159'
+magenta = '#e583b2'
+cyan = '#50d2a6'
+
+[palettes.space]
+accent = '#77a4f6'
+accent2 = '#b48de0'
+muted = '#8b92a2'
+red = '#e9859d'
+green = '#52c08e'
+yellow = '#bfd371'
+magenta = '#cf8bd3'
+cyan = '#2ecedc'
 
 [palettes.techy]
-accent = '#5ea1ff'
-accent2 = '#bd5eff'
-muted = '#7b8496'
-red = '#ff6e5e'
-green = '#5eff6c'
-yellow = '#f1ff5e'
+accent = '#60a7ff'
+accent2 = '#c681e4'
+muted = '#8794a1'
+red = '#f87992'
+green = '#3bc47d'
+yellow = '#ccd046'
+magenta = '#da82da'
+cyan = '#00d0da'

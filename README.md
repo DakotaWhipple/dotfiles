@@ -9,18 +9,27 @@ theme forest       # switch everything to the forest vibe
 theme-cycle        # next vibe (also: click the  logo in the bar)
 ```
 
-| vibe   | palette          | feel                              |
-|--------|------------------|-----------------------------------|
-| cozy   | Catppuccin Mocha | soft pastels on warm dark grey    |
-| forest | Everforest       | mossy greens, warm wood tones     |
-| space  | Tokyo Night      | deep-space blues, nebula purples  |
-| pink   | Rosé Pine        | muted rose, gold and iris on plum |
-| retro  | Gruvbox          | warm amber, olive and rust        |
-| techy  | Cyberdream       | neon accents on near-black        |
+| vibe   | feel                              |
+|--------|-----------------------------------|
+| cozy   | Catppuccin Mocha, soft pastels on warm dark grey (pinned) |
+| forest | mossy greens, warm wood light     |
+| space  | deep-night blues, indigo glow     |
+| pink   | dusty rose on midnight plum       |
+| retro  | amber CRT warmth, faded paper     |
+| techy  | electric blue on near-black       |
 
 ## How it works
 
-`themes/<vibe>/colors.sh` is the single source of truth. `bin/theme`:
+Palettes are **generated, not curated**. `themes/<vibe>/seed.sh` states a few
+hues and mood multipliers; `bin/theme-palette` derives the full palette in
+OKLCH — uniform lightness/chroma across the ANSI row, foreground pinned to a
+WCAG contrast target, focus borders mixed toward the background (~3:1, a glow
+instead of a razor edge), IntelliJ-flavored syntax roles, wallpaper gradient
+stops — and writes `themes/<vibe>/colors.sh`, a `rice-<vibe>` neovim
+colorscheme, and the starship palettes. cozy pins stock Catppuccin Mocha and
+only derives the extra roles.
+
+`themes/<vibe>/colors.sh` is then the runtime source of truth. `bin/theme`:
 
 - regenerates `kitty/current-theme.conf` and live-recolors every running
   kitty via its remote-control socket
@@ -29,10 +38,20 @@ theme-cycle        # next vibe (also: click the  logo in the bar)
   (sockets in `~/.cache/nvim/theme-servers/`)
 - reloads sketchybar and restyles JankyBorders in place
 - flips the starship palette, rewrites fzf colors and the yazi theme
+- regenerates truecolor `LS_COLORS`/`EZA_COLORS` so `ls`/`ll`/`la` (eza),
+  `cat` (bat) and fd follow the vibe
+- rewrites `chrome/theme.css` so the Rice Tab new-tab page follows too
 - renders a wallpaper from the palette (`bin/theme-wallpaper`, ffmpeg
   gradient + vignette) and sets it
 
-Adding a vibe = one new `themes/<name>/colors.sh`. Everything else derives.
+Adding a vibe = one new `themes/<name>/seed.sh` + `theme-palette <name>`.
+Everything else derives.
+
+## Chrome
+
+`chrome/` is an unpacked extension (load once: `chrome://extensions` →
+Developer mode → Load unpacked → `~/dotfiles/chrome`). It replaces the new
+tab with a clock + your bookmarks-bar folders, colored by the active vibe.
 
 ## Keybindings (mouse optional)
 
@@ -62,9 +81,17 @@ Adding a vibe = one new `themes/<name>/colors.sh`. Everything else derives.
 | `cmd+enter`       | auto split                                     |
 | `cmd+t`           | new tab (same cwd)                             |
 | `cmd+shift+z`     | zoom split (stack layout)                      |
+| `ctrl+;`          | **manage mode** (zellij-style, home row)       |
+
+**Manage mode** (`ctrl+;`, then): `h/l` prev/next tab · `j/k` cycle windows ·
+`H/L` reorder tabs · `1-5` jump to tab · `n` new tab · `s/v` splits ·
+`z` zoom · `x` close window · `,` rename tab · `r` resize submode (hjkl) ·
+`esc`/`enter` leave.
 
 **Shell** — vi-mode (`esc` for normal mode, prompt shows `❮`), `ctrl+r`
-fzf history, `ctrl+t` fzf files, `y` opens yazi and cd's where you quit.
+fzf history, `ctrl+t` fzf files, `y` opens yazi and cd's where you quit,
+`cd` is zoxide (frecency jumps), `ls/ll/la/lt` are eza with vibe colors,
+`cat` is bat. The prompt shows the jj change id + bookmark in jj repos.
 
 **Anywhere** — Homerow: hit its hotkey and type a label to click anything
 keyboard-only.
@@ -73,7 +100,7 @@ keyboard-only.
 
 ```sh
 brew install kitty neovim starship yazi fzf jq zoxide ffmpeg \
-  font-jetbrains-mono-nerd-font
+  eza fd bat font-jetbrains-mono-nerd-font
 brew trust nikitabobko/tap && brew install --cask nikitabobko/tap/aerospace homerow
 # sketchybar + borders: brew install if Xcode is current, else build from
 # source (FelixKratz/SketchyBar, FelixKratz/JankyBorders) into ~/.local/bin

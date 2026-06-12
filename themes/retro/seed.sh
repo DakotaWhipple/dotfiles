@@ -1,0 +1,11 @@
+# retro — amber CRT warmth, faded paper.
+DESC="Amber CRT warmth, faded paper."
+NVIM_COLORSCHEME="rice-retro"
+L_BG="0.24"
+C_BG="0.018"
+H_BG="85"
+H_FG="90"
+H_ACCENT="55"
+H_ACCENT_ALT="95"
+SAT="1.05"
+COHESION="0.20"

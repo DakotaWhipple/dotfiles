@@ -1,0 +1,10 @@
+# techy — electric blue on near-black.
+DESC="Electric blue on near-black."
+NVIM_COLORSCHEME="rice-techy"
+L_BG="0.18"
+C_BG="0.010"
+H_BG="250"
+H_ACCENT="255"
+H_ACCENT_ALT="315"
+SAT="1.25"
+COHESION="0.10"

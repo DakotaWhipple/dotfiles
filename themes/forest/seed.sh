@@ -1,0 +1,11 @@
+# forest — mossy greens, warm wood light.
+DESC="Mossy greens, warm wood light."
+NVIM_COLORSCHEME="rice-forest"
+L_BG="0.30"
+C_BG="0.012"
+H_BG="200"
+H_FG="90"
+H_ACCENT="130"
+H_ACCENT_ALT="180"
+SAT="0.85"
+COHESION="0.18"
