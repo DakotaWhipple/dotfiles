@@ -17,7 +17,7 @@ lesson_tabs() {
   brief "Tabs you know — here is the full kit:
 
   cmd+t        new tab (keeps current directory)
-  ctrl+;       MANAGE MODE — a vim-style mode for the terminal:
+  ctrl+o       MANAGE MODE — a vim-style mode for the terminal:
      h / l        previous / next tab
      shift+h/l    move this tab left / right
      1..5         jump to tab N
@@ -30,18 +30,18 @@ One mode key, then single letters. Just like vim."
   local tbase; tbase=$(kitty_tab_count); tbase=${tbase:-1}
 
   watch_task "Open a new tab with cmd+t, then come back to this one
-(ctrl+; then h, or cmd+shift+[)." \
+(ctrl+o then h, or cmd+shift+[)." \
     '[ "$(kitty_tab_count)" -gt '"$tbase"' ] 2>/dev/null' \
-    "cmd+t makes the tab; ctrl+; h walks back"
+    "cmd+t makes the tab; ctrl+o h walks back"
 
-  watch_task "Give THIS tab a title: ctrl+; then , (comma) —
+  watch_task "Give THIS tab a title: ctrl+o then , (comma) —
 type exactly:  sensei   and press enter." \
     '[ "$(kitty_tab_title)" = "sensei" ] 2>/dev/null' \
-    "ctrl+; , then type sensei"
+    "ctrl+o , then type sensei"
 
-  quiz "Enter kitty manage mode?" "ctrl-;|ctrl-semicolon" ""
-  quiz "Jump straight to tab 3?" "ctrl-; 3|3" \
-    "ctrl+; then the number — h/l for stepping"
+  quiz "Enter kitty manage mode?" "ctrl-o" ""
+  quiz "Jump straight to tab 3?" "ctrl-o 3|3" \
+    "ctrl+o then the number — h/l for stepping"
 }
 
 lesson_splits() {
@@ -51,7 +51,7 @@ tests or logs in the other, no tab flipping.
   cmd+d          split VERTICALLY (new pane to the right)
   cmd+shift+d    split HORIZONTALLY (new pane below)
   cmd+enter      split along whichever side is longer
-  close one:     type exit (or ctrl+d) in it — or ctrl+; x
+  close one:     type exit (or ctrl+d) in it — or ctrl+o x
 
 The dojo is watching your window count. Go."
 
@@ -82,7 +82,7 @@ lesson_navigate() {
   ctrl+h/j/k/l       focus pane left/down/up/right
                      (inside nvim, the SAME keys cross between
                      nvim splits and kitty panes — smart-splits)
-  ctrl+; j/k         cycle panes from manage mode
+  ctrl+o j/k         cycle panes from manage mode
   ctrl+alt+hjkl      resize on the fly
   ctrl+shift+r       resize MODE (hjkl to resize, = resets, esc)"
 
@@ -102,7 +102,7 @@ lesson_stack() {
   brief "The trick that makes splits livable: STACK layout.
 One pane goes (visually) fullscreen; the others wait behind it.
 
-  cmd+shift+z    toggle stack  <->  splits   (also: ctrl+; z)
+  cmd+shift+z    toggle stack  <->  splits   (also: ctrl+o z)
 
 Split workflow: code left, logs right — need to read a long
 stack trace? cmd+shift+z zooms the pane. Done? cmd+shift+z back."
@@ -149,7 +149,7 @@ pager. Search for the word 'stack' with /stack. q to quit."
 
 drills() {
   add_quiz "New tab?" "cmd-t"
-  add_quiz "Kitty manage mode?" "ctrl-;|ctrl-semicolon"
+  add_quiz "Kitty manage mode?" "ctrl-o"
   add_quiz "Vertical split?" "cmd-d"
   add_quiz "Horizontal split?" "cmd-shift-d"
   add_quiz "Focus pane to the right?" "ctrl-l"

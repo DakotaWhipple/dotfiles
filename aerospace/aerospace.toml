@@ -16,6 +16,14 @@ exec-on-workspace-change = [
   '$HOME/.local/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 
+# This keyboard is Dvorak. AeroSpace binds by physical keycode and assumes
+# QWERTY unless told otherwise — without this, every letter binding fires on
+# the wrong physical key (e.g. alt-n landed on the Dvorak 'b' key). With the
+# preset, the key names below mean the Dvorak character you actually type, so
+# alt-h/j/k/l match vim and kitty, and alt-n is your real 'n'.
+[key-mapping]
+preset = 'dvorak'
+
 [gaps]
 inner.horizontal = 10
 inner.vertical = 10
@@ -71,7 +79,7 @@ alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 alt-enter = 'exec-and-forget open -na kitty'
 alt-n = 'exec-and-forget $HOME/dotfiles/bin/note-capture'   # quick jot -> daily note
 
-alt-shift-semicolon = 'mode service'
+alt-shift-o = 'mode service'
 
 [mode.service.binding]
 esc = ['reload-config', 'mode main']

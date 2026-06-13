@@ -93,7 +93,7 @@ fullscreen on/off. Try alt+minus and alt+equal to resize."
 }
 
 lesson_service() {
-  brief "alt+shift+; enters SERVICE mode — the rescue layer:
+  brief "alt+shift+o enters SERVICE mode — the rescue layer:
 
   esc          reload aerospace config (and back to normal)
   r            FLATTEN the layout tree — fixes weird nesting
@@ -102,13 +102,13 @@ lesson_service() {
   alt+shift+hjkl   JOIN this window with its neighbor (makes
                    them share a column/row), then back to normal
 
-When a workspace gets tangled: alt+shift+; then r. Layout therapy."
+When a workspace gets tangled: alt+shift+o then r. Layout therapy."
 
-  guided "Try it safely: alt+shift+; then r. The layout flattens
+  guided "Try it safely: alt+shift+o then r. The layout flattens
 and you are back in normal mode. (esc in service mode also
 reloads the config — useful after editing aerospace.toml.)"
 
-  quiz "Enter service mode?" "alt-shift-;|alt-shift-semicolon" ""
+  quiz "Enter service mode?" "alt-shift-o" ""
   quiz "Fix a tangled layout (in service mode)?" "r" "flatten-workspace-tree"
   quiz "Close everything except this window (service mode)?" "backspace" ""
 
@@ -129,7 +129,7 @@ drills() {
   add_quiz "Accordion layout?" "alt-,|alt-comma"
   add_quiz "Fullscreen?" "alt-f"
   add_quiz "Float toggle?" "alt-shift-f"
-  add_quiz "Service mode?" "alt-shift-;|alt-shift-semicolon"
+  add_quiz "Service mode?" "alt-shift-o"
   add_quiz "Flatten a broken layout (service mode)?" "r"
   add_quiz "Capture a note from anywhere?" "alt-n"
   add_quiz "Grow the focused window?" "alt-=|alt-equal"
