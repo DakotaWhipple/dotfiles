@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# dojo — interactive trainer for this whole setup (vim, kitty, aerospace,
+# zsh, notes, scripting). Lessons are hands-on and replayable, with timed
+# drills and high scores. Content lives in ~/dotfiles/dojo/courses.
+#
+#   dojo              main menu
+#   dojo <course>     jump to a course by slug (e.g. `dojo vim-core`)
+#   dojo gym          random timed vim drills
+#   dojo stats        progress + high scores
+#   dojo reset        wipe all progress (asks first)
+set -u
+
+DOJO_ROOT="${DOJO_ROOT:-${DOTFILES:-$HOME/dotfiles}/dojo}"
+. "$DOJO_ROOT/lib/dojo.sh"
+
+trap 'printf "\n  %ssaved — see you at the dojo%s\n" "$DIM" "$RS"; exit 0' INT
+
+case "${1:-}" in
+  "") main_menu;;
+  gym) gym_run;;
+  stats) stats_screen;;
+  list)
+    for d in $(course_dirs); do
+      load_course "$d"
+      printf '%-16s %s\n' "$COURSE_SLUG" "$COURSE_TITLE"
+    done;;
+  reset)
+    read -r -p "wipe all dojo progress and high scores? (yes/no) " a </dev/tty
+    [ "$a" = yes ] && rm -f "$SCORES" && echo "reset."
+    ;;
+  *)
+    found=""
+    for d in $(course_dirs); do
+      [ "$(course_slug_of "$d")" = "$1" ] && found="$d"
+    done
+    if [ -n "$found" ]; then
+      load_course "$found"
+      course_menu
+    else
+      echo "no course '$1' — try: dojo list"
+      exit 1
+    fi;;
+esac
+printf '\n  %ssee you at the dojo ⛩%s\n' "$DIM" "$RS"

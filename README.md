@@ -116,6 +116,20 @@ atuin history search, `ctrl+t` fzf files, `y` opens yazi and cd's where you quit
 **Anywhere** — Homerow: hit its hotkey and type a label to click anything
 keyboard-only.
 
+## Learn it: the dojo
+
+```
+dojo
+```
+
+An interactive trainer for everything above — terminal, notes, vim (timed
+drills with personal bests), kitty, aerospace, zsh, bash scripting, and the
+road to contributing upstream. Lessons verify for real (it watches your
+actual kitty splits and aerospace workspaces), every lesson keeps stars and
+best times, each course has a rapid-fire arcade with high scores, and
+`dojo gym` serves random timed vim drills. See `dojo/README.md` — adding a
+new course (rust, spanish, anything) is one bash file.
+
 ## Install on a new machine
 
 ```sh
