@@ -61,9 +61,18 @@ enter opens the first hit, or web-searches), daily pill row, a **rediscover**
 row (random picks from the catalog), and bookmark folder cards. Saving is
 Chrome's own ★ star — new saves surface in the **recent** card, where a
 hover control files them into folders (same for the **inbox** folder).
-On first run it reorganizes the bookmarks bar into a curated set
-(`chrome/bookmarks-data.js`; new entries there sync in add-only later) —
-the old bar is preserved under Other Bookmarks → "archive (pre-rice 2026-06)".
+The page only *reads* `chrome.bookmarks` — Chrome is the source of truth, so
+deletes and edits stick. `bin/bookmarks` mirrors Chrome ↔ the repo:
+
+```
+bookmarks save      snapshot Chrome's bookmarks -> chrome/bookmarks.json
+bookmarks restore   rebuild Chrome's bookmarks from the mirror (quit Chrome first)
+```
+
+`chrome/bookmarks.json` is a clean folder/name/url tree (no guids or
+timestamps), committed for version control and portability. A launchd timer
+(`com.koda.bookmarks`, every 30 min) keeps the mirror trailing Chrome; commit
+it whenever. On a fresh machine, `bookmarks restore` rebuilds the profile.
 
 **Terminal** — `bin/home` greets each fresh kitty shell: block-digit clock,
 date, vibe + palette strip, jj status. Run `home` anytime.

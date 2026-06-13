@@ -101,6 +101,35 @@ EOF
 agent com.koda.sketchybar "$HOME/.local/bin/sketchybar"
 agent com.koda.borders "$HOME/.local/bin/borders"
 
+## bookmarks mirror — snapshot Chrome's bookmarks into the repo on a timer.
+## Short-lived job (not a daemon): StartInterval + RunAtLoad, no KeepAlive.
+timer() { # timer <label> <interval-seconds> <program...>
+  local label="$1" interval="$2" plist="$HOME/Library/LaunchAgents/$1.plist"; shift 2
+  local args=""; for a in "$@"; do args+="<string>$a</string>"; done
+  mkdir -p "$HOME/Library/LaunchAgents"
+  cat > "$plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$label</string>
+  <key>ProgramArguments</key><array>$args</array>
+  <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>$interval</integer>
+  <key>EnvironmentVariables</key><dict>
+    <key>DOTFILES</key><string>$DOTS</string>
+    <key>PATH</key><string>$DOTS/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StandardOutPath</key><string>/tmp/$label.out.log</string>
+  <key>StandardErrorPath</key><string>/tmp/$label.err.log</string>
+</dict></plist>
+EOF
+  launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+  launchctl bootstrap "gui/$(id -u)" "$plist"
+  echo "timer: $label (every ${interval}s)"
+}
+
+timer com.koda.bookmarks 1800 /usr/bin/python3 "$DOTS/bin/bookmarks" save
+
 echo
 echo "done. open AeroSpace and Homerow once to grant Accessibility permission:"
 echo "  open -a AeroSpace && open -a Homerow"

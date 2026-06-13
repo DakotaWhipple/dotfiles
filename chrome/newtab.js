@@ -1,7 +1,7 @@
 // Rice Tab — themed dashboard over chrome.bookmarks.
-// One-time migration (see bookmarks-data.js): the old bookmarks bar is moved
-// into Other Bookmarks → archive, then the curated structure is created.
-// After that, ensureCurated() syncs new bookmarks-data.js entries in (add-only).
+// Chrome is the source of truth: this page only *reads* your bookmarks, never
+// writes a curated set (deletes stick). The dotfiles mirror lives in
+// chrome/bookmarks.json, synced by `bin/bookmarks` — see that file.
 // Saving is Chrome's own ★ star — new saves surface in the "recent" card,
 // where they can be filed into folders. Keys: "/" filter, esc clear.
 
@@ -39,48 +39,6 @@ function favicon(url) {
 async function bookmarksBar() {
   const tree = await chrome.bookmarks.getTree();
   return tree[0].children.find((c) => c.id === "1") ?? tree[0].children[0];
-}
-
-async function migrateOnce() {
-  const tree = await chrome.bookmarks.getTree();
-  const bar = tree[0].children.find((c) => c.id === "1") ?? tree[0].children[0];
-  const other = tree[0].children.find((c) => c.id === "2") ?? tree[0].children[1];
-  const done = bar.children.some((c) => c.children && c.title === "inbox") ||
-    other.children.some((c) => c.title === RICE_ARCHIVE_TITLE);
-  if (done) return;
-
-  const arch = await chrome.bookmarks.create({ parentId: other.id, title: RICE_ARCHIVE_TITLE });
-  for (const c of [...bar.children]) {
-    await chrome.bookmarks.move(c.id, { parentId: arch.id });
-  }
-  for (const [title, url] of RICE_BAR) {
-    await chrome.bookmarks.create({ parentId: bar.id, title, url });
-  }
-  for (const [name, links] of RICE_FOLDERS) {
-    const f = await chrome.bookmarks.create({ parentId: bar.id, title: name });
-    for (const [title, url] of links) {
-      await chrome.bookmarks.create({ parentId: f.id, title, url });
-    }
-  }
-  toast(`bookmarks reorganized — old set kept in “${RICE_ARCHIVE_TITLE}”`);
-}
-
-// add-only sync: anything new in bookmarks-data.js (a pill, a folder, a link
-// inside a folder) is created on profiles that already migrated. Never deletes.
-async function ensureCurated() {
-  const bar = await bookmarksBar();
-  const barUrls = new Set(bar.children.filter((n) => n.url).map((n) => n.url));
-  for (const [title, url] of RICE_BAR) {
-    if (!barUrls.has(url)) await chrome.bookmarks.create({ parentId: bar.id, title, url });
-  }
-  for (const [name, links] of RICE_FOLDERS) {
-    const f = bar.children.find((n) => n.children && n.title === name) ??
-      await chrome.bookmarks.create({ parentId: bar.id, title: name });
-    const urls = new Set((f.children ?? []).map((n) => n.url));
-    for (const [title, url] of links) {
-      if (!urls.has(url)) await chrome.bookmarks.create({ parentId: f.id, title, url });
-    }
-  }
 }
 
 let folders = []; // top-level folders of the bar, for filing + rediscover
@@ -128,20 +86,10 @@ function card(title, nodes, { cls = "", hint = "", file = false } = {}) {
   return sec;
 }
 
-// last saves anywhere (chrome's ★ included), minus the pre-rice archive —
-// this is how new links enter the page without any custom add dialog
+// last saves anywhere (chrome's ★ included) — this is how new links enter the
+// page without any custom add dialog; file them into a folder with "file ▸"
 async function recentAdds(n = 8) {
-  const [tree, recent] = await Promise.all([
-    chrome.bookmarks.getTree(), chrome.bookmarks.getRecent(50),
-  ]);
-  const archived = new Set();
-  (function mark(node, inArch) {
-    if (inArch) archived.add(node.id);
-    for (const c of node.children ?? []) {
-      mark(c, inArch || node.title === RICE_ARCHIVE_TITLE);
-    }
-  })(tree[0], false);
-  return recent.filter((b) => !archived.has(b.id)).slice(0, n);
+  return (await chrome.bookmarks.getRecent(n));
 }
 
 // three random picks from the deep catalog — resurfaces links you forgot
@@ -229,4 +177,4 @@ function toast(msg) {
   toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3500);
 }
 
-migrateOnce().then(ensureCurated).then(render);
+render();

@@ -1,0 +1,251 @@
+{
+  "bookmark_bar": [
+    {
+      "name": "hacker news",
+      "url": "https://news.ycombinator.com/"
+    },
+    {
+      "name": "reddit",
+      "url": "https://www.reddit.com/"
+    },
+    {
+      "name": "youtube",
+      "url": "https://www.youtube.com/"
+    },
+    {
+      "name": "gmail",
+      "url": "https://mail.google.com/"
+    },
+    {
+      "name": "whatsapp",
+      "url": "https://web.whatsapp.com/"
+    },
+    {
+      "name": "random wiki",
+      "url": "https://en.wikipedia.org/wiki/Special:Random"
+    },
+    {
+      "name": "dev",
+      "children": [
+        {
+          "name": "github",
+          "url": "https://github.com/"
+        },
+        {
+          "name": "mdn",
+          "url": "https://developer.mozilla.org/"
+        },
+        {
+          "name": "devdocs",
+          "url": "https://devdocs.io/"
+        },
+        {
+          "name": "go packages",
+          "url": "https://pkg.go.dev/"
+        },
+        {
+          "name": "crates.io",
+          "url": "https://crates.io/"
+        },
+        {
+          "name": "grep.app — code search",
+          "url": "https://grep.app/"
+        },
+        {
+          "name": "regex101",
+          "url": "https://regex101.com/"
+        },
+        {
+          "name": "excalidraw",
+          "url": "https://excalidraw.com/"
+        },
+        {
+          "name": "jj docs",
+          "url": "https://jj-vcs.github.io/jj/latest/"
+        },
+        {
+          "name": "lazyvim",
+          "url": "https://www.lazyvim.org/"
+        },
+        {
+          "name": "kitty docs",
+          "url": "https://sw.kovidgoyal.net/kitty/"
+        },
+        {
+          "name": "tldr pages",
+          "url": "https://tldr.inbrowser.app/"
+        },
+        {
+          "name": "man pages — mankier",
+          "url": "https://www.mankier.com/"
+        },
+        {
+          "name": "charm",
+          "url": "https://charm.sh/"
+        }
+      ]
+    },
+    {
+      "name": "interview",
+      "children": [
+        {
+          "name": "leetcode top 150",
+          "url": "https://leetcode.com/studyplan/top-interview-150/"
+        },
+        {
+          "name": "neetcode roadmap",
+          "url": "https://neetcode.io/roadmap"
+        },
+        {
+          "name": "company-wise problems",
+          "url": "https://github.com/liquidslr/interview-company-wise-problems"
+        },
+        {
+          "name": "amazon sde iii prep",
+          "url": "https://amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep"
+        },
+        {
+          "name": "faang resume guide",
+          "url": "https://www.reddit.com/r/leetcode/comments/1lrukwz/a_straightforward_guide_to_building_a_faang_ready/"
+        },
+        {
+          "name": "levels.fyi",
+          "url": "https://www.levels.fyi/"
+        },
+        {
+          "name": "advent of code",
+          "url": "https://adventofcode.com/"
+        }
+      ]
+    },
+    {
+      "name": "reading",
+      "children": [
+        {
+          "name": "lobsters",
+          "url": "https://lobste.rs/"
+        },
+        {
+          "name": "drew devault",
+          "url": "https://drewdevault.com/"
+        },
+        {
+          "name": "josh comeau",
+          "url": "https://www.joshwcomeau.com/"
+        },
+        {
+          "name": "bartosz ciechanowski",
+          "url": "https://ciechanow.ski/"
+        },
+        {
+          "name": "luminousmen",
+          "url": "https://luminousmen.com/"
+        },
+        {
+          "name": "paul graham essays",
+          "url": "https://paulgraham.com/articles.html"
+        },
+        {
+          "name": "sre book",
+          "url": "https://sre.google/sre-book/table-of-contents/"
+        },
+        {
+          "name": "book of shaders",
+          "url": "https://thebookofshaders.com/"
+        }
+      ]
+    },
+    {
+      "name": "design",
+      "children": [
+        {
+          "name": "oklch picker",
+          "url": "https://oklch.com/"
+        },
+        {
+          "name": "realtime colors",
+          "url": "https://www.realtimecolors.com/"
+        },
+        {
+          "name": "dribbble",
+          "url": "https://dribbble.com/"
+        },
+        {
+          "name": "behance",
+          "url": "https://www.behance.net/"
+        },
+        {
+          "name": "the bézier game",
+          "url": "https://bezier.method.ac/"
+        },
+        {
+          "name": "atomic design",
+          "url": "https://atomicdesign.bradfrost.com/"
+        },
+        {
+          "name": "palettum",
+          "url": "https://palettum.com/"
+        },
+        {
+          "name": "coolors",
+          "url": "https://coolors.co/"
+        }
+      ]
+    },
+    {
+      "name": "tools & media",
+      "children": [
+        {
+          "name": "anna's archive",
+          "url": "https://annas-archive.li/"
+        },
+        {
+          "name": "freemediaheckyeah",
+          "url": "https://www.reddit.com/r/FREEMEDIAHECKYEAH/wiki/index/"
+        },
+        {
+          "name": "wayback machine",
+          "url": "https://web.archive.org/"
+        },
+        {
+          "name": "cobalt — save media",
+          "url": "https://cobalt.tools/"
+        },
+        {
+          "name": "monkeytype",
+          "url": "https://monkeytype.com/"
+        },
+        {
+          "name": "product hunt",
+          "url": "https://www.producthunt.com/"
+        }
+      ]
+    },
+    {
+      "name": "inbox",
+      "children": []
+    },
+    {
+      "name": "gemini",
+      "url": "https://gemini.google.com/"
+    },
+    {
+      "name": "streaming",
+      "children": [
+        {
+          "name": "prime video",
+          "url": "https://www.primevideo.com/"
+        },
+        {
+          "name": "hbo max",
+          "url": "https://play.hbomax.com/"
+        },
+        {
+          "name": "disney+",
+          "url": "https://www.disneyplus.com/"
+        }
+      ]
+    }
+  ],
+  "other": []
+}
