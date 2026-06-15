@@ -1,0 +1,507 @@
+#!/usr/bin/env python3
+"""keymap — keybind conflict + Dvorak-ergonomics tool for the rice.
+
+Four layers stack and intercept a keypress in order:
+
+    aerospace (macOS-global)  →  kitty (terminal, has modes)  →  nvim / zsh
+
+A chord typed inside nvim passes *down* the stack: aerospace gets first refusal,
+then kitty, then nvim. So two kinds of problem exist:
+
+  • duplicate — same chord bound twice in one layer+mode (last write wins)
+  • shadow    — an upper layer eats a chord a lower layer also wants, so the
+                lower binding never fires (your ctrl+o → kitty manage-mode case)
+
+This tool normalizes every layer into one chord model, reports both problems in
+the contexts where they can actually collide, and scores/suggests open chords by
+how easy they are to type *on Dvorak* (home row a o e u / h t n s).
+
+Commands:
+    keymap check                 find duplicates + shadows (default)
+    keymap free [ctx] [--mods M] [-n N]   rank open, easy chords for a context
+    keymap score <chord>         explain a chord's Dvorak ease
+    keymap list [layer]          dump normalized bindings
+
+Contexts: nvim-normal nvim-insert shell kitty-manage kitty-resize
+Chords are written like:  alt+h   ctrl+shift+t   leader+f   <C-o>
+"""
+from __future__ import annotations
+import json, os, re, subprocess, sys, tempfile, tomllib
+from dataclasses import dataclass, field
+from pathlib import Path
+
+# quiet env for the introspection subprocesses (zoxide/zsh doctors are chatty)
+QUIET_ENV = {**os.environ, "_ZO_DOCTOR": "0", "RICE_HOME_SHOWN": "1"}
+HOME = Path.home()
+DOTS = HOME / "dotfiles"
+KITTY_CONF = DOTS / "kitty" / "kitty.conf"
+AEROSPACE = DOTS / "aerospace" / "aerospace.toml"
+
+# ---------------------------------------------------------------- colors --
+def _c(n): return f"\033[{n}m" if sys.stdout.isatty() else ""
+RS, B, DIM = _c(0), _c(1), _c(2)
+RED, GRN, YEL, BLU, MAG, CYN = (_c(i) for i in (31, 32, 33, 34, 35, 36))
+
+# --------------------------------------------------------- Dvorak layout --
+# Physical Dvorak rows, left→right. Used only to score typing ease.
+_ROWS = {
+    "number": "`1234567890[]",
+    "top":    "',.pyfgcrl/=",
+    "home":   "aoeuidhtns-",
+    "bottom": ";qjkxbmwvz",
+}
+# finger per column index within each row's natural hand split; we approximate
+# with a per-key table: key -> (hand, finger, rowname). finger: 1 pinky..4 index
+_FINGER = {}
+def _assign(row, keys, fingers):
+    for k, (hand, fin) in zip(keys, fingers):
+        _FINGER[k] = (hand, fin, row)
+# left h., right h.; (hand,finger) per key, standard Dvorak touch typing
+_assign("home", "aoeui", [("L",1),("L",2),("L",3),("L",4),("L",4)])
+_assign("home", "dhtns", [("R",4),("R",4),("R",3),("R",2),("R",1)])
+_assign("home", "-",     [("R",1)])
+_assign("top",  "',.py", [("L",1),("L",2),("L",3),("L",4),("L",4)])
+_assign("top",  "fgcrl", [("R",4),("R",4),("R",3),("R",2),("R",1)])
+_assign("top",  "/=",    [("R",1),("R",1)])
+_assign("bottom","jkx",  [("L",3),("L",4),("L",4)])  # under e u u-ish
+_assign("bottom",";q",   [("L",1),("L",2)])
+_assign("bottom","bmwvz",[("R",4),("R",4),("R",3),("R",2),("R",1)])
+for d in "1234567890":
+    _FINGER[d] = ("L" if d in "12345" else "R", 1, "number")
+
+_ROW_BASE   = {"home": 5, "top": 3, "bottom": 2, "number": 1}
+_FINGER_BON = {4: 3, 3: 3, 2: 1, 1: 0}  # index/middle strong, pinky weak
+
+def key_comfort(key: str) -> float:
+    """0..8-ish comfort for tapping a single base key on Dvorak."""
+    key = key.lower()
+    if key in _FINGER:
+        hand, fin, row = _FINGER[key]
+        return _ROW_BASE[row] + _FINGER_BON[fin]
+    # named keys: rate by how far the hand leaves home row
+    near = {"space": 7, "tab": 4, "enter": 4, "esc": 2, "backspace": 2}
+    if key in near: return near[key]
+    if re.fullmatch(r"f\d+", key): return 1   # function row, far reach
+    return 3  # unknown / arrows / punctuation names
+
+def chord_score(chord: "Chord") -> tuple[float, list[str]]:
+    """Score a whole chord 0..10 with human-readable reasons."""
+    why = []
+    base = key_comfort(chord.key)
+    why.append(f"key '{chord.key}' comfort {base:.0f}/8")
+    score = base
+    nmods = len(chord.mods)
+    if nmods == 0:
+        score += 2; why.append("no modifier (+2)")
+    else:
+        score -= 1.5 * nmods; why.append(f"{nmods} modifier(s) (-{1.5*nmods:.1f})")
+    # hand alternation: assume modifiers held by the left hand (left ctrl/cmd).
+    if nmods and chord.key.lower() in _FINGER:
+        hand = _FINGER[chord.key.lower()][0]
+        if hand == "R":
+            score += 1; why.append("right-hand key alternates with left modifier (+1)")
+        else:
+            score -= 0.5; why.append("same-hand as modifier (-0.5)")
+    if "shift" in chord.mods and chord.key.lower() in _FINGER and _FINGER[chord.key.lower()][1] == 1:
+        score -= 1; why.append("shift + pinky key (-1)")
+    if "alt" in chord.mods:
+        score -= 0.5; why.append("alt/option is an awkward thumb-stretch on mac (-0.5)")
+    score = max(0.0, min(10.0, score))
+    return score, why
+
+# ------------------------------------------------------------ chord model --
+_MODS_ORDER = ["ctrl", "alt", "shift", "cmd"]
+_MOD_SYNONYM = {
+    "control": "ctrl", "ctl": "ctrl", "c": "ctrl",
+    "option": "alt", "opt": "alt", "meta": "alt", "m": "alt", "a": "alt",
+    "s": "shift",
+    "super": "cmd", "gui": "cmd", "win": "cmd", "command": "cmd", "d": "cmd",
+    "kitty_mod": "ctrl+shift",
+}
+_KEY_SYNONYM = {
+    "slash": "/", "comma": ",", "period": ".", "minus": "-", "equal": "=",
+    "plus": "+", "backslash": "\\", "leader": "space", "cr": "enter",
+    "return": "enter", "spc": "space", "bs": "backspace", "del": "delete",
+    "esc": "esc", "leftbracket": "[", "rightbracket": "]",
+}
+
+@dataclass(frozen=True)
+class Chord:
+    mods: frozenset
+    key: str
+    def __str__(self):
+        parts = [m for m in _MODS_ORDER if m in self.mods]
+        return "+".join(parts + [self.key])
+
+def make_chord(mods, key) -> Chord:
+    norm = set()
+    for m in mods:
+        m = _MOD_SYNONYM.get(m.lower(), m.lower())
+        norm.update(m.split("+"))  # kitty_mod → ctrl+shift
+    klow = key.lower()
+    named = _KEY_SYNONYM.get(klow)
+    if named is not None:
+        key = named
+    elif norm & {"ctrl", "alt", "cmd"}:
+        key = klow   # case is meaningless next to ctrl/alt/cmd (ctrl+h == ctrl+H)
+    # else bare key: keep original case — it's significant in vim sequences
+    #   (<leader>ff ≠ <leader>fF, [a ≠ [A, k ≠ K)
+    return Chord(frozenset(norm), key)
+
+# --------------------------------------------------------------- binding --
+@dataclass
+class Binding:
+    layer: str
+    mode: str
+    chord: Chord
+    action: str
+    raw: str = ""
+    passthrough: bool = False  # kitty yields this chord to nvim when focused
+    is_seq: bool = False       # nvim multi-key sequence (chord = its first key)
+
+# --------------------------------------------------------- layer parsers --
+def parse_aerospace() -> list[Binding]:
+    if not AEROSPACE.exists(): return []
+    data = tomllib.loads(AEROSPACE.read_text())
+    out = []
+    for mode, body in (data.get("mode") or {}).items():
+        for combo, action in (body.get("binding") or {}).items():
+            *mods, key = combo.split("-")
+            out.append(Binding("aerospace", mode, make_chord(mods, key),
+                               str(action), f"{combo} = {action!r}"))
+    return out
+
+def parse_kitty() -> list[Binding]:
+    if not KITTY_CONF.exists(): return []
+    out = []
+    for line in KITTY_CONF.read_text().splitlines():
+        s = line.strip()
+        if not s.startswith("map "): continue
+        toks = s.split()[1:]
+        mode, cond, new_mode = "default", "", ""
+        while toks and toks[0].startswith("--"):
+            flag = toks.pop(0)
+            if flag == "--mode": mode = toks.pop(0)
+            elif flag == "--new-mode": new_mode = toks.pop(0)
+            elif flag == "--when-focus-on": cond = toks.pop(0)
+            else:  # flag with a value we don't model
+                if toks and not toks[0].startswith("--"): toks.pop(0)
+        if not toks: continue
+        combo = toks.pop(0)
+        action = " ".join(toks)
+        *mods, key = combo.replace("kitty_mod", "ctrl+shift").split("+")
+        chord = make_chord(mods, key)
+        passthrough = cond.endswith("IS_NVIM") and not action
+        if new_mode:
+            action = f"→ enter '{new_mode}' mode"
+        out.append(Binding("kitty", mode, chord, action or "(yield)",
+                           s, passthrough))
+    return out
+
+def parse_nvim() -> list[Binding]:
+    lua_tmp = tempfile.NamedTemporaryFile("r", suffix=".json", delete=False)
+    lua_tmp.close()
+    lua = (
+        "local modes={'n','i','v','x','o','c','t'} local out={} "
+        "for _,m in ipairs(modes) do out[m]={} "
+        "for _,k in ipairs(vim.api.nvim_get_keymap(m)) do "
+        "table.insert(out[m],{lhs=k.lhs,rhs=k.rhs or '',desc=k.desc or ''}) end end "
+        f"vim.fn.writefile({{vim.json.encode(out)}}, '{lua_tmp.name}')"
+    )
+    try:
+        subprocess.run(["nvim", "--headless", "-c", "lua " + lua, "-c", "qa!"],
+                       capture_output=True, timeout=60, env=QUIET_ENV,
+                       stdin=subprocess.DEVNULL, start_new_session=True)
+        data = json.loads(Path(lua_tmp.name).read_text() or "{}")
+    except Exception as e:
+        print(f"{YEL}! nvim introspection failed: {e}{RS}", file=sys.stderr)
+        return []
+    finally:
+        os.unlink(lua_tmp.name)
+    out = []
+    for mode, maps in data.items():
+        for m in maps:
+            parsed = parse_nvim_lhs(m["lhs"])
+            if parsed:
+                chord, is_seq = parsed
+                out.append(Binding("nvim", mode, chord,
+                                   m.get("desc") or m.get("rhs") or "<fn>",
+                                   m["lhs"], is_seq=is_seq))
+    return out
+
+_MOD_LETTER = {"C": "ctrl", "A": "alt", "M": "alt", "S": "shift", "D": "cmd"}
+
+def parse_nvim_lhs(lhs: str):
+    """Turn an nvim lhs into (first_chord, is_sequence).
+
+    Only the *first* keystroke can be shadowed by a single-chord upper layer, so
+    we represent any multi-key sequence by its first chord and flag is_seq. The
+    flag keeps sequences out of duplicate detection (where the truncated tail
+    would create bogus collisions like <C-w> vs <C-w>d)."""
+    if not lhs: return None
+    # leading <Mod-...key> token, e.g. <C-w>, <C-S-Tab>, possibly with a tail
+    m = re.match(r"<((?:[CASMD]-)+)([^>]+)>(.*)", lhs)
+    if m:
+        mods = [_MOD_LETTER[p[0]] for p in re.findall(r"[CASMD]-", m.group(1))]
+        return make_chord(mods, m.group(2)), bool(m.group(3))
+    # leading <Named> token (<CR>, <Tab>, <leader>, <Esc>...) with optional tail
+    m = re.match(r"<([^>]+)>(.*)", lhs)
+    if m:
+        name = "space" if m.group(1).lower() == "leader" else m.group(1)
+        return make_chord([], name), bool(m.group(2))
+    # plain text: first char is the chord, the rest is a sequence tail
+    first, tail = lhs[0], lhs[1:]
+    if first == " ":  # bare leader prefix
+        return make_chord([], "space"), bool(tail)
+    return make_chord([], first), bool(tail)
+
+def parse_zsh() -> list[Binding]:
+    try:
+        res = subprocess.run(["zsh", "-ic", "bindkey -L"],
+                             capture_output=True, text=True, timeout=20, env=QUIET_ENV,
+                             stdin=subprocess.DEVNULL, start_new_session=True)
+    except Exception:
+        return []
+    out = []
+    for line in res.stdout.splitlines():
+        m = re.match(r'bindkey "([^"]+)" (\S+)', line)
+        if not m: continue  # skip ranges (-R), string macros (-s), keymap (-M)
+        seq, action = m.groups()
+        chord = parse_zsh_seq(seq)
+        if chord:
+            out.append(Binding("zsh", "emacs", chord, action, line.strip()))
+    return out
+
+def parse_zsh_seq(seq: str) -> Chord | None:
+    if re.match(r"\^\[\[", seq): return None     # raw escape seq (arrows etc)
+    if seq.startswith("^[") and len(seq) == 3:   # ^[x = alt+x
+        return make_chord(["alt"], seq[2])
+    if seq.startswith("^") and len(seq) == 2:    # ^X = ctrl+x
+        k = seq[1].lower()
+        if k == "i": k = "tab"
+        if k == "m": k = "enter"
+        return make_chord(["ctrl"], k)
+    if len(seq) == 1:
+        return make_chord([], seq)
+    return None
+
+# ------------------------------------------------------------- contexts --
+# Each context lists the (layer, mode) sets that can fire on one keypress, in
+# priority order (earlier = wins / shadows the later). Kitty passthrough binds
+# are dropped from contexts where nvim is focused (they intentionally yield).
+CONTEXTS = {
+    "nvim-normal":  [("aerospace", "main"), ("kitty", "default", "yield-nvim"), ("nvim", "n")],
+    "nvim-insert":  [("aerospace", "main"), ("kitty", "default", "yield-nvim"), ("nvim", "i")],
+    "shell":        [("aerospace", "main"), ("kitty", "default"), ("zsh", "emacs")],
+    "kitty-manage": [("aerospace", "main"), ("kitty", "manage")],
+    "kitty-resize": [("aerospace", "main"), ("kitty", "resize")],
+}
+
+def load_all() -> list[Binding]:
+    return parse_aerospace() + parse_kitty() + parse_nvim() + parse_zsh()
+
+# chords kitty deliberately yields to nvim (via --when-focus-on var:IS_NVIM).
+def yield_set(binds):
+    return {str(b.chord) for b in binds if b.layer == "kitty" and b.passthrough}
+
+def in_layer(binds, layer, mode, yields=None):
+    yields = yields or set()
+    out = []
+    for b in binds:
+        if b.layer == layer and b.mode == mode:
+            if b.passthrough:                       # the yield directive itself
+                continue
+            if yields and b.layer == "kitty" and str(b.chord) in yields:
+                continue                            # whole chord is yielded to nvim
+            out.append(b)
+    return out
+
+# --------------------------------------------------------------- checks --
+def find_duplicates(binds):
+    seen, dups = {}, []
+    for b in binds:
+        if b.passthrough or b.is_seq:   # sequences/yields aren't real dup signal
+            continue
+        key = (b.layer, b.mode, str(b.chord))
+        if key in seen:
+            dups.append((seen[key], b))
+        else:
+            seen[key] = b
+    return dups
+
+def find_shadows(binds):
+    """Per context: a chord present in 2+ layers; upper one wins, lower shadowed."""
+    yields = yield_set(binds)
+    shadows = []
+    for ctx, layers in CONTEXTS.items():
+        nvim_focus = any("yield-nvim" in spec for spec in layers if len(spec) > 2)
+        chord_map = {}  # chord -> list of (priority, binding)
+        for prio, spec in enumerate(layers):
+            layer, mode = spec[0], spec[1]
+            for b in in_layer(binds, layer, mode,
+                              yields=yields if nvim_focus else None):
+                chord_map.setdefault(str(b.chord), []).append((prio, b))
+        for chord, hits in chord_map.items():
+            if len({h[1].layer for h in hits}) < 2:
+                continue  # same layer = duplicate, handled elsewhere
+            hits.sort(key=lambda h: h[0])
+            winner = hits[0][1]
+            for _, loser in hits[1:]:
+                if loser.layer == winner.layer:
+                    continue
+                # self-insert/undefined-key mean the key wasn't really bound —
+                # nothing is actually lost, so don't report it as a shadow.
+                if loser.layer == "zsh" and loser.action in ("self-insert", "undefined-key"):
+                    continue
+                shadows.append((ctx, winner, loser))
+    return shadows
+
+def suggest_fix(winner: Binding, loser: Binding, binds) -> str:
+    if winner.layer == "kitty" and loser.layer == "nvim":
+        return (f"kitty catches it first. Let it through to nvim:\n"
+                f"      {CYN}map --when-focus-on var:IS_NVIM {winner.chord}{RS}")
+    if winner.layer == "aerospace":
+        free = free_chords(binds, "nvim-normal", mods_for(loser.chord), n=3)
+        alt = ", ".join(str(c) for c, _ in free) or "(none easy free)"
+        return (f"aerospace grabs {winner.chord} globally — nothing below sees it.\n"
+                f"      Rebind one side. Easy free chords: {GRN}{alt}{RS}")
+    return f"upper layer {winner.layer}/{winner.mode} wins; rebind the {loser.layer} one."
+
+def mods_for(chord: Chord):
+    return ["+".join(m for m in _MODS_ORDER if m in chord.mods)] if chord.mods else [""]
+
+# ----------------------------------------------------------- suggestions --
+_CAND_KEYS = list("aoeuidhtns") + list("',.pyfgcrl") + list("qjkxbmwvz") + list("123456789")
+
+# Vim normal-mode built-ins never show up in nvim_get_keymap (they aren't
+# mappings), so the suggester must treat them as already-taken or it will
+# happily recommend clobbering core keys. Bare letters are all spoken for in
+# vim; these are the ctrl-chords vim/LazyVim reserve by default.
+_VIM_BUILTIN = {str(make_chord([], c)) for c in "abcdefghijklmnopqrstuvwxyz"}
+_VIM_BUILTIN |= {str(make_chord(["ctrl"], c)) for c in "abdefiioruvwyz"}
+
+def _leader_taken(binds):
+    """First post-<leader> key already in use (a whole <leader>X group)."""
+    out = set()
+    for b in binds:
+        if b.layer == "nvim" and b.raw.startswith(" ") and len(b.raw) > 1:
+            out.add(b.raw[1])
+    return out
+
+def free_chords(binds, ctx, mods_list, n=8):
+    layers = CONTEXTS[ctx]
+    yields = yield_set(binds)
+    nvim_ctx = ctx.startswith("nvim")
+    taken = set(_VIM_BUILTIN) if nvim_ctx else set()
+    for spec in layers:
+        layer, mode = spec[0], spec[1]
+        for b in in_layer(binds, layer, mode,
+                          yields=yields if nvim_ctx else None):
+            taken.add(str(b.chord))
+    ltaken = _leader_taken(binds)
+    cands = []
+    for mods in mods_list:
+        if mods == "leader":                       # <leader>X sequence namespace
+            for k in _CAND_KEYS:
+                if k in ltaken: continue
+                # leader is space (a cheap thumb tap); ease ≈ the follow key
+                cands.append((Chord(frozenset(), f"<leader>{k}"), key_comfort(k) + 2))
+            continue
+        modset = [m for m in mods.split("+") if m]
+        for k in _CAND_KEYS:
+            c = make_chord(modset, k)
+            if str(c) in taken: continue
+            cands.append((c, chord_score(c)[0]))
+    cands.sort(key=lambda x: -x[1])
+    seen, out = set(), []
+    for c, sc in cands:
+        if str(c) in seen: continue
+        seen.add(str(c)); out.append((c, min(10.0, sc)))
+        if len(out) >= n: break
+    return out
+
+# --------------------------------------------------------------- output --
+def cmd_check():
+    binds = load_all()
+    counts = {}
+    for b in binds: counts[b.layer] = counts.get(b.layer, 0) + 1
+    print(f"\n{B}{MAG}⌨  keymap check{RS}  "
+          + DIM + "  ".join(f"{k}:{v}" for k, v in sorted(counts.items())) + RS)
+
+    dups = find_duplicates(binds)
+    print(f"\n{B}duplicates{RS} {DIM}(same chord twice in one layer+mode — last wins){RS}")
+    if not dups:
+        print(f"  {GRN}✓ none{RS}")
+    for a, b in dups:
+        print(f"  {RED}✗ {a.layer}/{a.mode} {B}{a.chord}{RS}{RED} — "
+              f"{a.action!r} vs {b.action!r}{RS}")
+
+    shadows = find_shadows(binds)
+    print(f"\n{B}shadows{RS} {DIM}(upper layer eats a chord a lower layer wants){RS}")
+    if not shadows:
+        print(f"  {GRN}✓ none in any context{RS}")
+    for ctx, win, lose in shadows:
+        print(f"  {RED}✗ [{ctx}] {B}{win.chord}{RS}{RED}: "
+              f"{win.layer}/{win.mode} ({win.action!r}) shadows "
+              f"{lose.layer}/{lose.mode} ({lose.action!r}){RS}")
+        print(f"      {DIM}fix:{RS} {suggest_fix(win, lose, binds)}")
+    print()
+
+def cmd_free(args):
+    ctx = "nvim-normal"
+    mods, n = None, 8
+    rest = []
+    i = 0
+    while i < len(args):
+        if args[i] == "--mods": mods = args[i+1].split(","); i += 2
+        elif args[i] in ("-n", "--num"): n = int(args[i+1]); i += 2
+        else: rest.append(args[i]); i += 1
+    if rest: ctx = rest[0]
+    if ctx not in CONTEXTS:
+        print(f"{RED}unknown context {ctx}. one of: {', '.join(CONTEXTS)}{RS}"); return
+    if mods is None:
+        mods = {"nvim-normal": ["leader", "ctrl"], "nvim-insert": ["ctrl", "alt"],
+                "shell": ["ctrl", "alt"], "kitty-manage": [""],
+                "kitty-resize": [""]}.get(ctx, ["ctrl"])
+    binds = load_all()
+    print(f"\n{B}{MAG}open + easy chords for {ctx}{RS} {DIM}(mods: {mods or ['none']}){RS}\n")
+    for c, sc in free_chords(binds, ctx, mods, n):
+        bar = "█" * int(round(sc)) + DIM + "·" * (10 - int(round(sc))) + RS
+        print(f"  {GRN}{str(c):<16}{RS} {bar} {DIM}{sc:.1f}{RS}")
+    print()
+
+def cmd_score(args):
+    if not args:
+        print(f"{RED}usage: keymap score <chord>{RS}"); return
+    raw = args[0]
+    if "<" in raw:                       # vim-style lhs, e.g. <C-o> or <leader>t
+        chord, _ = parse_nvim_lhs(raw)
+    else:
+        *mods, key = raw.split("+")
+        chord = make_chord(mods, key)
+    sc, why = chord_score(chord)
+    print(f"\n  {B}{chord}{RS}  →  {GRN if sc>=6 else YEL if sc>=4 else RED}{sc:.1f}/10{RS}")
+    for w in why: print(f"    {DIM}· {w}{RS}")
+    print()
+
+def cmd_list(args):
+    binds = load_all()
+    layer = args[0] if args else None
+    for b in sorted(binds, key=lambda x: (x.layer, x.mode, str(x.chord))):
+        if layer and b.layer != layer: continue
+        tag = f"{CYN}[yield]{RS}" if b.passthrough else ""
+        print(f"  {DIM}{b.layer}/{b.mode:<8}{RS} {B}{str(b.chord):<18}{RS} "
+              f"{b.action[:50]} {tag}")
+
+def main():
+    args = sys.argv[1:]
+    cmd = args[0] if args else "check"
+    if cmd == "check": cmd_check()
+    elif cmd == "free": cmd_free(args[1:])
+    elif cmd == "score": cmd_score(args[1:])
+    elif cmd == "list": cmd_list(args[1:])
+    elif cmd in ("-h", "--help", "help"): print(__doc__)
+    else: print(f"{RED}unknown command {cmd}{RS}\n{__doc__}")
+
+if __name__ == "__main__":
+    main()

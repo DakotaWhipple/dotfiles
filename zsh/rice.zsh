@@ -12,6 +12,13 @@ export KEYTIMEOUT=1
 bindkey '^a' beginning-of-line
 bindkey '^e' end-of-line
 bindkey '^?' backward-delete-char
+# clear-screen lives on alt+shift+C: ctrl+l is owned by kitty for pane nav
+# (neighboring_window) and never reaches the shell. ^[C = ESC then C; ZLE matches
+# the full sequence (both bytes buffered), so KEYTIMEOUT=1 doesn't split it.
+bindkey '^[C' clear-screen           # insert mode (viins)
+bindkey -M vicmd '^[C' clear-screen  # normal mode
+bindkey -r '^l'                      # ctrl+l belongs to kitty; drop zsh's default
+bindkey -M vicmd -r '^l'
 
 # fzf: keybindings (ctrl-t files) + vibe colors
 command -v fzf >/dev/null && source <(fzf --zsh)
@@ -30,7 +37,6 @@ if command -v eza >/dev/null; then
   alias lt='eza --icons --group-directories-first --tree --level=2 --git-ignore'
 fi
 command -v bat >/dev/null && alias cat='bat --style=plain --paging=never'
-command -v zoxide >/dev/null && eval "$(zoxide init zsh --cmd cd)"  # cd learns frecency
 
 # prompt
 command -v starship >/dev/null && eval "$(starship init zsh)"
@@ -50,3 +56,7 @@ function y() {
   fi
   rm -f -- "$tmp"
 }
+
+# zoxide last — it wants its chpwd/precmd hook registered after everything else
+# (e.g. starship), or its doctor warns. `--cmd cd` makes `cd` learn frecency.
+command -v zoxide >/dev/null && eval "$(zoxide init zsh --cmd cd)"

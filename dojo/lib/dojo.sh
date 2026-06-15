@@ -79,6 +79,15 @@ shuffle_idx() { # $1 = count; prints 0..n-1 shuffled
 sandbox_reset() {
   rm -rf "$SANDBOX"
   mkdir -p "$SANDBOX"
+  # Mirror the real editor's formatting so format-on-save (stylua via conform)
+  # produces the same indent here as in actual projects. Without a stylua.toml
+  # above the sandbox, stylua falls back to its 4-space default and drill
+  # targets (written 2-space) stop matching.
+  if [ -f "$HOME/.config/nvim/stylua.toml" ]; then
+    cp "$HOME/.config/nvim/stylua.toml" "$SANDBOX/stylua.toml"
+  else
+    printf 'indent_type = "Spaces"\nindent_width = 2\n' > "$SANDBOX/stylua.toml"
+  fi
 }
 
 # helper commands available inside shell_task subshells
