@@ -1,8 +1,10 @@
 #!/bin/sh
 # Keybind hint bar for kitty's manage/resize modes.
 #
-# Drawn as a kitty *dock* (launch --dock-type=tab-bottom-edge): a fixed-size,
-# non-focusable window pinned to the bottom edge of the tab. Unlike the old
+# Drawn as a kitty *dock* (launch --dock-type=os-window-bottom-edge): a
+# fixed-size, non-focusable window pinned to the bottom edge that automatically
+# follows the active tab, so the one bar window persists across tab switches —
+# matching the keyboard mode, which is itself per-OS-window. Unlike the old
 # approach of splitting in a real window it does NOT consume a slot in the
 # layout, and unlike the desktop panel it used to be it lives inside kitty
 # itself (so it tracks the window, theme and font, and needs no separate

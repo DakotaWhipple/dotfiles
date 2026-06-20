@@ -1,0 +1,52 @@
+{
+  "experimental.theme_overrides": {
+    "Ayu Dark": {
+      "syntax": {
+        "attribute": { "color": "#FF944Dff" },
+        "boolean": { "color": "#B170FFff" },
+        "comment": { "color": "#9AA0A6ff" },
+        "comment.doc": { "color": "#BDC1C6ff" },
+        "constant": { "color": "#B170FFff" },
+        "constructor": { "color": "#FF944Dff" },
+        "embedded": { "color": "#E8EAEDff" },
+        "emphasis": { "color": "#B170FFff" },
+        "emphasis.strong": { "color": "#B170FFff", "font_weight": 700 },
+        "enum": { "color": "#FF944Dff" },
+        "function": { "color": "#FFD13Bff" },
+        "hint": { "color": "#9AA0A6ff" },
+        "keyword": { "color": "#F15C52ff" },
+        "label": { "color": "#FF944Dff" },
+        "link_text": { "color": "#5494FEff", "font_style": "italic" },
+        "link_uri": { "color": "#41CD7Dff" },
+        "namespace": { "color": "#4DD0E1ff" },
+        "number": { "color": "#B170FFff" },
+        "operator": { "color": "#FF73B9ff" },
+        "predictive": { "color": "#9AA0A6ff", "font_style": "italic" },
+        "preproc": { "color": "#F15C52ff" },
+        "primary": { "color": "#E8EAEDff" },
+        "property": { "color": "#5494FEff" },
+        "punctuation": { "color": "#BDC1C6ff" },
+        "punctuation.bracket": { "color": "#BDC1C6ff" },
+        "punctuation.delimiter": { "color": "#BDC1C6ff" },
+        "punctuation.list_marker": { "color": "#BDC1C6ff" },
+        "punctuation.markup": { "color": "#BDC1C6ff" },
+        "punctuation.special": { "color": "#FF73B9ff" },
+        "selector": { "color": "#FF944Dff" },
+        "selector.pseudo": { "color": "#4DD0E1ff" },
+        "string": { "color": "#41CD7Dff" },
+        "string.escape": { "color": "#FF73B9ff" },
+        "string.regex": { "color": "#FF73B9ff" },
+        "string.special": { "color": "#FF73B9ff" },
+        "string.special.symbol": { "color": "#FF73B9ff" },
+        "tag": { "color": "#4DD0E1ff" },
+        "text.literal": { "color": "#41CD7Dff" },
+        "title": { "color": "#E8EAEDff", "font_weight": 700 },
+        "type": { "color": "#FF944Dff" },
+        "variable": { "color": "#E8EAEDff" },
+        "variant": { "color": "#FF944Dff" },
+        "diff.plus": { "color": "#41CD7Dff" },
+        "diff.minus": { "color": "#F15C52ff" }
+      }
+    }
+  }
+}
