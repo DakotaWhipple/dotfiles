@@ -1,10 +1,54 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
 {
-  "experimental.theme_overrides": {
+  "colorize_brackets": true,
+  "agent_servers": {
+    "claude-acp": {
+      "default_config_options": {
+        "mode": "bypassPermissions",
+      },
+      "type": "registry",
+    },
+  },
+  "base_keymap": "VSCode",
+  "session": {
+    "trust_all_worktrees": true,
+  },
+  "vim_mode": true,
+  "relative_line_numbers": "enabled",
+  "scroll_beyond_last_line": "one_page",
+  "vertical_scroll_margin": 8,
+  "cursor_blink": false,
+  "vim": {
+    "use_system_clipboard": "never",
+    "use_multiline_find": true,
+    "use_smartcase_find": true,
+    "highlight_on_yank_duration": 200,
+  },
+  "icon_theme": {
+    "mode": "system",
+    "light": "Zed (Default)",
+    "dark": "Zed (Default)",
+  },
+  "ui_font_size": 16,
+  "buffer_font_size": 15,
+  "theme": {
+    "mode": "system",
+    "light": "Ayu Light",
+    "dark": "Ayu Dark",
+  },
+  "theme_overrides": {
     "Ayu Dark": {
       "syntax": {
         "attribute": { "color": "#FF944Dff" },
         "boolean": { "color": "#B170FFff" },
-        "comment": { "color": "#9AA0A6ff" },
+        "comment": { "color": "#B170FFff" },
         "comment.doc": { "color": "#BDC1C6ff" },
         "constant": { "color": "#B170FFff" },
         "constructor": { "color": "#FF944Dff" },
@@ -33,7 +77,7 @@
         "punctuation.special": { "color": "#FF73B9ff" },
         "selector": { "color": "#5494FEff" },
         "selector.pseudo": { "color": "#F15C52ff" },
-        "string": { "color": "#FF944Dff" },
+        "string": { "color": "#41CD7Dff" },
         "string.escape": { "color": "#FF73B9ff" },
         "string.regex": { "color": "#FF73B9ff" },
         "string.special": { "color": "#FF73B9ff" },
@@ -42,11 +86,12 @@
         "text.literal": { "color": "#FF944Dff" },
         "title": { "color": "#E8EAEDff", "font_weight": 700 },
         "type": { "color": "#5494FEff" },
-        "variable": { "color": "#41CD7Dff" },
+        "variable": { "color": "#F15C52ff" },
         "variant": { "color": "#5494FEff" },
         "diff.plus": { "color": "#41CD7Dff" },
-        "diff.minus": { "color": "#F15C52ff" }
-      }
-    }
-  }
+        "diff.minus": { "color": "#F15C52ff" },
+      },
+    },
+  },
 }
+
