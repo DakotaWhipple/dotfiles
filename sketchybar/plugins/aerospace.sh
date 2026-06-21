@@ -4,12 +4,14 @@ source "$HOME/.config/theme/colors.sh"
 sid="$1"
 FOCUSED_WORKSPACE="${FOCUSED_WORKSPACE:-$(aerospace list-workspaces --focused 2>/dev/null)}"
 
+m=$(aerospace list-workspaces --monitor all --format '%{monitor-id} %{workspace}' | awk -v ws="$sid" '$2 == ws {print $1}')
+
 if [ "$sid" = "$FOCUSED_WORKSPACE" ]; then
-  sketchybar --set "$NAME" drawing=on \
+  sketchybar --set "$NAME" display="$m" drawing=on \
     background.drawing=on label.color="0xff$BG_DARK"
 elif [ "$(aerospace list-windows --workspace "$sid" --count 2>/dev/null)" -gt 0 ] 2>/dev/null; then
-  sketchybar --set "$NAME" drawing=on \
+  sketchybar --set "$NAME" display="$m" drawing=on \
     background.drawing=off label.color="0xff$FG_MUTED"
 else
-  sketchybar --set "$NAME" drawing=off
+  sketchybar --set "$NAME" display="$m" drawing=off
 fi

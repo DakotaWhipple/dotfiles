@@ -36,10 +36,12 @@ sketchybar --add item logo left \
     label.drawing=off click_script="$HOME/dotfiles/bin/theme-cycle"
 
 sketchybar --add event aerospace_workspace_change
-for sid in 1 2 3 4 5 6 7 8 9; do
+for sid in $(aerospace list-workspaces --all); do
+  m=$(aerospace list-workspaces --monitor all --format '%{monitor-id} %{workspace}' | awk -v ws="$sid" '$2 == ws {print $1}')
   sketchybar --add item "space.$sid" left \
     --subscribe "space.$sid" aerospace_workspace_change \
     --set "space.$sid" \
+      display=$m \
       label="$sid" \
       icon.drawing=off \
       label.padding_left=8 \
@@ -51,7 +53,7 @@ for sid in 1 2 3 4 5 6 7 8 9; do
 done
 
 sketchybar --add item front_app left \
-  --set front_app icon.drawing=off label.color="0xff$ACCENT_ALT" \
+  --set front_app display=active icon.drawing=off label.color="0xff$ACCENT_ALT" \
     label.font="JetBrainsMono Nerd Font:Bold:13.0" \
     script="$PLUGIN_DIR/front_app.sh" \
   --subscribe front_app front_app_switched
