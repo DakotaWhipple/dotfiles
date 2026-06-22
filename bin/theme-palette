@@ -419,7 +419,18 @@ def write_starship_palettes(all_palettes):
     if m:
         text = text[:m.start()]
     text = text.rstrip() + "\n"
-    for vibe, p in sorted(all_palettes.items()):
+    
+    full_palettes = {}
+    for d in (DOTS / "themes").iterdir():
+        cfile = d / "colors.sh"
+        if cfile.is_file():
+            p = {}
+            for m_var in re.finditer(r'\b([A-Z_0-9]+)="([^"]+)"', cfile.read_text()):
+                p[m_var.group(1)] = m_var.group(2)
+            if "ACCENT" in p:
+                full_palettes[d.name] = p
+                
+    for vibe, p in sorted(full_palettes.items()):
         text += (
             f"\n[palettes.{vibe}]\n"
             f"accent = '#{p['ACCENT']}'\naccent2 = '#{p['ACCENT_ALT']}'\n"
