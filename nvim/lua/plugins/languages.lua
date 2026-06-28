@@ -1,0 +1,54 @@
+return {
+  -- {
+  --   "nvim-treesitter/nvim-treesitter",
+  --   opts = function(_, opts)
+  --     vim.list_extend(opts.ensure_installed, {
+  --       "rust",
+  --       "go",
+  --     })
+  --   end,
+  -- },
+  --
+  -- {
+  --   "hrsh7th/nvim-cmp",
+  --   dependencies = { "hrsh7th/cmp-emoji" },
+  --   opts = function(_, opts)
+  --     table.insert(opts.sources, { name = "emoji" })
+  --   end,
+  -- },
+
+  -- "neovim/nvim-lspconfig",
+  -- opts = {
+  --   servers = {
+  --     dartls = {
+  --       cmd = { "dart", "language-server", "--protocol=lsp" },
+  --       filetypes = { "dart" },
+  --       init_options = {
+  --         closingLabels = true,
+  --         flutterOutline = true,
+  --         onlyAnalyzeProjectsWithOpenFiles = true,
+  --         outline = true,
+  --         suggestFromUnimportedLibraries = true,
+  --       },
+  --       settings = {
+  --         dart = {
+  --           completeFunctionCalls = true,
+  --           showTodos = true,
+  --         },
+  --       },
+  --       root_dir = require("lspconfig.util").root_pattern("pubspec.yaml"),
+  --       --root_dir = util.root_pattern("pubspec.yaml"),
+  --     },
+  --   },
+  -- },
+  --
+  -- {
+  --   "nvim-flutter/flutter-tools.nvim",
+  --   lazy = false,
+  --   dependencies = {
+  --     "nvim-lua/plenary.nvim",
+  --     "stevearc/dressing.nvim", -- optional for vim.ui.select
+  --   },
+  --   config = true,
+  -- },
+}
