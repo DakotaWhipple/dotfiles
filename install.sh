@@ -15,18 +15,19 @@ link() { # link <src> <dst> — backs up anything that isn't already a symlink
 }
 
 ## config symlinks
-link "$DOTS/kitty"                   "$HOME/.config/kitty"
-link "$DOTS/aerospace"               "$HOME/.config/aerospace"
-link "$DOTS/sketchybar"              "$HOME/.config/sketchybar"
-link "$DOTS/borders"                 "$HOME/.config/borders"
-link "$DOTS/yazi"                    "$HOME/.config/yazi"
-link "$DOTS/zk"                      "$HOME/.config/zk"
+link "$DOTS/kitty" "$HOME/.config/kitty"
+link "$DOTS/aerospace" "$HOME/.config/aerospace"
+link "$DOTS/sketchybar" "$HOME/.config/sketchybar"
+link "$DOTS/borders" "$HOME/.config/borders"
+link "$DOTS/yazi" "$HOME/.config/yazi"
+link "$DOTS/zk" "$HOME/.config/zk"
+link "$DOTS/nvim" "$HOME/.config/nvim"
 
 chmod +x "$DOTS/bin/"* "$DOTS/sketchybar/sketchybarrc" "$DOTS/sketchybar/plugins/"* "$DOTS/borders/bordersrc"
 
 ## shell glue
 if ! grep -q 'dotfiles/zsh/rice.zsh' "$HOME/.zshrc" 2>/dev/null; then
-  printf '\n# cozy rice (theme, prompt, vi-mode, fzf, yazi)\nsource "$HOME/dotfiles/zsh/rice.zsh"\n' >> "$HOME/.zshrc"
+  printf '\n# cozy rice (theme, prompt, vi-mode, fzf, yazi)\nsource "$HOME/dotfiles/zsh/rice.zsh"\n' >>"$HOME/.zshrc"
   echo "added rice.zsh to ~/.zshrc"
 fi
 
@@ -42,13 +43,6 @@ mkdir -p "$HOME/notes/journal"
 if command -v jj >/dev/null && [ ! -d "$HOME/notes/.jj" ]; then
   jj git init "$HOME/notes" >/dev/null && echo "jj repo: ~/notes"
 fi
-
-## desktop widgets — Übersicht renders the rice widgets over the wallpaper
-if command -v brew >/dev/null && [ ! -d "/Applications/Übersicht.app" ]; then
-  brew install -q --cask ubersicht
-fi
-link "$DOTS/ubersicht" "$HOME/Library/Application Support/Übersicht/widgets/rice"
-open -a "Übersicht" 2>/dev/null || true
 
 ## wallpapers
 for d in "$DOTS/themes"/*/; do
@@ -78,7 +72,7 @@ defaults write com.knollsoft.Rectangle launchOnLogin -bool false 2>/dev/null || 
 agent() { # agent <label> <program>
   local label="$1" prog="$2" plist="$HOME/Library/LaunchAgents/$1.plist"
   mkdir -p "$HOME/Library/LaunchAgents"
-  cat > "$plist" <<EOF
+  cat >"$plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -104,10 +98,12 @@ agent com.koda.borders "$HOME/.local/bin/borders"
 ## bookmarks mirror — snapshot Chrome's bookmarks into the repo on a timer.
 ## Short-lived job (not a daemon): StartInterval + RunAtLoad, no KeepAlive.
 timer() { # timer <label> <interval-seconds> <program...>
-  local label="$1" interval="$2" plist="$HOME/Library/LaunchAgents/$1.plist"; shift 2
-  local args=""; for a in "$@"; do args+="<string>$a</string>"; done
+  local label="$1" interval="$2" plist="$HOME/Library/LaunchAgents/$1.plist"
+  shift 2
+  local args=""
+  for a in "$@"; do args+="<string>$a</string>"; done
   mkdir -p "$HOME/Library/LaunchAgents"
-  cat > "$plist" <<EOF
+  cat >"$plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>

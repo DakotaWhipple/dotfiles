@@ -77,11 +77,6 @@ it whenever. On a fresh machine, `bookmarks restore` rebuilds the profile.
 **Terminal** — `bin/home` greets each fresh kitty shell: block-digit clock,
 date, vibe + palette strip, jj status. Run `home` anytime.
 
-**Desktop** — Übersicht widgets in `ubersicht/` (symlinked by install.sh):
-`rice-clock` bottom-left, `rice-sys` (load/mem/disk/uptime) bottom-right,
-`rice-cal` (month, today highlighted) top-right. All read the active
-`colors.sh` and re-theme on `theme set`.
-
 ## Keybindings (mouse optional)
 
 **Windows — AeroSpace (`alt` is the leader)**
