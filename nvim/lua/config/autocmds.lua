@@ -13,3 +13,11 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
     pcall(os.remove, sock)
   end,
 })
+
+-- Turn off diagnostics for markdown files
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "markdown",
+  callback = function(args)
+    vim.diagnostic.enable(false, { bufnr = args.buf })
+  end,
+})
