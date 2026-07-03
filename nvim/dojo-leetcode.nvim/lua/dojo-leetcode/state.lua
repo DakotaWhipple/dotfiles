@@ -66,4 +66,22 @@ function M.record_attempt(archetype_id, stage, passed)
   M.save(data)
 end
 
+-- Records a stage solve time; keeps the per-stage personal best.
+-- Returns the previous PB in ms (nil on first solve) so the UI can
+-- show "new PB" vs "PB stands".
+function M.record_solve(archetype_id, stage, ms)
+  local data = M.load()
+  data[archetype_id] = data[archetype_id] or {}
+  local entry = data[archetype_id]
+  entry.pb = entry.pb or {}
+  local key = tostring(stage)
+  local prev = entry.pb[key]
+  if not prev or ms < prev then
+    entry.pb[key] = ms
+  end
+  entry.updated_at = os.time()
+  M.save(data)
+  return prev
+end
+
 return M

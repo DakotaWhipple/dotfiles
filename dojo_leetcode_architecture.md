@@ -1,163 +1,72 @@
-# Dojo LeetCode Neovim Plugin Architecture (v4)
+# Dojo LeetCode Neovim Plugin Architecture (v5)
 
-**Goal:** go from "what's a two sum?" to Anthropic-senior-engineer-level problem solving, in Kotlin, at Dvorak-neovim speed — with an engine that can later extend to system design without a rewrite.
+**Goal:** "what's a two sum?" → Anthropic-senior-level interviewing, trained inside the best neovim setup possible. Doublelift mechanics, Faker macro: mechanics matter but are secondary — the skill ceiling is strategy (pattern recognition, approach selection, tradeoff judgment), and strategy is built in **review**, not in gates.
 
-v3 (previous draft) had the right instincts on progression/persistence but got ahead of itself on judge rigor (ASM bytecode instrumentation, a detekt daemon) before a single problem existed, and didn't resolve how "infinite variations" actually gets built. This version resolves those.
+## What v4 got wrong (and v5 fixes)
 
-## 0. Decisions made without your sign-off — override any of these
+1. **Overuse of AI.** v4 put an LLM in the core content loop — no API key/network, no new problems. v5's core loop is 100% offline and free. AI is an optional garnish (Phase 4), never load-bearing.
+2. **Prescriptive judging kills discovery.** v3/v4 carried structural rules ("a sliding window requires a loop") and feedback that assumed *which* solution you wrote. If the fun is discovering your own approach, the judge must be a **black box**: it observes behavior (correct outputs) and physics (measured speed at scale) and nothing else. A weird, novel, correct, fast solution passes — and *should*.
+3. **Effort on the input side instead of the output side.** The learning moment isn't the problem statement; it's the ten minutes after you solve it. v5 moves most of the system to post-solve output: measured performance, solve time vs personal best, and an **editorial** — multiple named approaches with real code and tradeoff notes, revealed only after you've earned them. VOD review, not a tutorial.
 
-I asked and got no response in time, so I proceeded with the recommended option on each. These are real preference calls, not settled facts — say the word and I'll flip any of them:
+## 1. Design invariants
 
-| Decision | Chosen | Alternatives you can still pick |
-|---|---|---|
-| Problem sourcing | Custom curated bank, no leetcode.nvim dependency | Hybrid seed from leetcode.nvim; full leetcode.nvim integration |
-| Variation generation | LLM-generated at runtime, cached to disk | Fully hand-authored schemas; template/procedural (no LLM) |
-| Judge rigor for v1 | Compile + execute + empirical timing only | Full ASM bytecode instrumentation + detekt daemon from day one |
-| System design scope | Deferred — ship algorithms trainer first, generalize later | Design a unified engine for both content types now |
+- **Black-box judge.** The only gates, ever: (a) tests pass, (b) execution fits a generous time budget at adversarial input sizes. No AST checks, no "did you use a HashMap," no required idioms. Your file just needs a `fun solve(...)` matching the signature — helpers, classes, extension functions, whatever style you want around it is your business.
+- **Discovery first, editorial after.** Hints exist but only on demand (`:DojoHint`). Alternative approaches are hidden until the archetype is complete (`:DojoReview`, bang to force-spoil).
+- **Offline, free, instant to start.** Problems are Lua data + Kotlin expressions. `brew install kotlin` is the only dependency. No accounts, no network, no key.
+- **Timed like the dojo.** Every stage records solve time; personal bests persist. Same culture as `dojo`'s stars and PBs — speed pressure is how mechanics stay honest while strategy is the focus.
 
----
+## 2. Variations without AI: answers by construction
 
-## 1. Relationship to the existing `dojo` trainer
+The v4 plan generated variations with an LLM and verified them against reference solutions. Unnecessary. For algorithm problems you can generate unbounded test inputs whose answers are **known by construction**:
 
-`dojo` (bash, `~/dotfiles/dojo/`) drills muscle memory: shell tasks, vim edit drills checked via `nvim -l`, arcade mode, gym mode, TSV state in `~/.local/state/dojo/scores.tsv`. It's pure bash, zero dependencies, and it's already good at what it does.
+- *Two sum at N=500,000*: `nums[i] = 2i` (all distinct, one planted pair is the unique answer — provable, not assumed).
+- *Longest unique substring at N=2,000,000*: cycle the alphabet; answer is exactly 26.
+- *Container with most water at N=200,000*: all heights 1; answer is exactly N−1.
 
-This project is **not a dojo course**. It needs a real editor session (LSP, a live Kotlin buffer, multi-stage UI) that bash-driving-nvim-headlessly can't give you, so it's a proper Neovim plugin. Two seams tie them together instead of merging them:
+Seeded randomization of the same constructions (shuffle positions, vary the planted pair) yields infinite concrete variations with exact expected answers, zero AI, zero runtime reference-solution execution. Since tests are literal Kotlin expressions in the schema, a "generator" is just a `run { … }` block that builds the input inline. This is the variation engine: **constructive generators, compounded across archetypes × input shapes × scales.**
 
-- **Entry point**: `dojo` gets a thin course (`dojo/courses/NN-leetcode/course.sh`) whose only job is `nvim -c "DojoLeetcodeStart"` — so `dojo leetcode` is muscle memory, same as everything else you drill.
-- **State convention**: mirrors dojo's layout — `~/.local/state/dojo-leetcode/{progress.json,variations/,scores.tsv}` — so `dojo stats` can eventually read both without special-casing.
+Complexity enforcement falls out for free: at these sizes, any O(N)/O(N log N) solution finishes in tens of milliseconds while O(N²) takes minutes. A generous wall-clock budget (~3s) separates them with no bytecode instrumentation, no curve fitting, no noise-sensitivity. (Scaling-ratio checks can be added later if a boundary case ever demands it.)
 
-Nothing more coupled than that. The plugin stands alone if `dojo` ever changes.
-
-## 2. Why not ECS
-
-ECS earns its cost when you have many live entities with heterogeneous, orthogonal components, queried every frame under performance pressure — that's a game loop problem. You have exactly one active problem instance at a time, no per-frame query pattern, and the actual axes of variation (a constraint, a test set, a feedback string, a difficulty) are already a natural **ordered pipeline**, not a component soup that needs runtime composition/querying. Reaching for ECS here would add a layer of indirection (component registries, systems, queries) that buys nothing — a stage list + a small content model does the same job more legibly. Skip it.
-
-## 3. Core Modules
-
-### 3.1 Content Model — Archetype → Constraint Dimensions → Variation
-
-This is the piece v3 was missing. Three layers, cleanly separated so "infinite variations" doesn't mean "infinite hand-authoring":
-
-- **Archetype**: an evergreen pattern (`sliding_window`, `two_pointer`, `graph_bfs`, `dp_1d`, `union_find`, …). Hand-authored, small in number (~15–20 covers most of the FAANG canon). Each archetype ships with:
-  - a canonical base statement and scaffold
-  - **one or more trusted reference solutions** (hand-written, per difficulty tier) — this is load-bearing, see 3.3
-  - a list of applicable **constraint dimensions**: `scale` (adversarial N), `encoding` (unicode/BMP traps), `memory` (O(1) space), `streaming` (can't hold the whole input), `concurrency` (thread-safety), `real_world` (messy/malformed input) — each dimension is a short spec, not full prose
-- **Variation**: a concrete instantiated problem — specific constraint text, specific generated test cases, specific feedback strings — for one archetype × one combination of dimensions. Variations are *generated*, not hand-written, and cached.
-
-This is what makes variations compound: a new archetype × existing dimension automatically yields new variations without new authoring, and a new dimension applies retroactively to every existing archetype.
-
-### 3.2 Variation Generator (the actual answer to "infinite")
-
-At `:DojoNext` (or during idle pre-fetch), the plugin calls Claude with: the archetype spec, the constraint dimension(s) selected for this stage, the variations already served to this user (avoid repeats), and a skill signal pulled from `progress.json` (what this user has struggled with). It returns constraint prose, a test generator spec, and Senior-Engineer-style feedback strings for the failure modes you'd expect at this stage.
-
-**Never trust the LLM's stated expected output.** The generator returns *inputs* and a natural-language constraint; the *expected* value for every test case is derived by executing the archetype's trusted reference solution (3.1) against that input, not by asking the LLM what the answer is. This is the difference between "infinite variations" and "infinite plausible-looking wrong answers." A generated variation that the reference solution can't run cleanly (parse error, ambiguous input) is rejected and regenerated, never shown to the user.
-
-Generated variations are cached at `~/.local/state/dojo-leetcode/variations/<archetype>/<dimension-hash>.json`, so repeats are free and the trainer works offline once you've built up a local library. No network, no plugin — same as any cache-miss-on-first-use system.
-
-### 3.3 Progression Engine (State Machine) — unchanged from v3, it was right
-
-- Manages a problem as a queue of `Stages`; passing Stage N injects Stage N+1's constraint into the buffer and re-evaluates.
-- **Regression enforcement**: advancing to Stage N re-runs all tests from Stages 1..N-1 (plus edge cases) — solutions must stay backward-compatible.
-- **Persistence**: `~/.local/state/dojo-leetcode/progress.json`, tracks per-archetype mastery signal (used by 3.2 to bias future variation selection toward weak spots).
-
-### 3.4 Validation Pipeline (the "Interviewer") — v1 scope, deliberately simplified
-
-v3 wanted mathematically exact complexity proof via bytecode instrumentation before a single problem was buildable. That's backwards — ship the trainer, add rigor once you're actually using it.
-
-1. **Compile**: persistent Kotlin daemon (`kotlinc` in daemon mode, or embedded Kotlin scripting host) — kills the 2–8s cold start without building custom tooling.
-2. **Execute + regress**: each submission runs in a fresh `URLClassLoader`, discarded after, for deterministic stateless runs — this part of v3 was correct and worth keeping as-is.
-3. **Complexity — empirical, not instrumented**: time N, 2N, 4N after discarding JIT warmup runs, classify by log-log slope. Slopes that land in an ambiguous band (e.g. between "clearly linear" and "clearly quadratic") are reported as *ambiguous, re-run at larger N* rather than false-confidently classified. Good enough to catch the O(N)-vs-O(N²) mistakes that actually show up at this stage; add ASM instrumentation later only if empirical timing proves too noisy in practice.
-4. **Structural (Tree-sitter)**: soft signal only (e.g. "no loop found, are you sure?") — never a hard gate. v3 already scoped this correctly.
-5. **Style feedback**: no detekt daemon in v1. The same LLM call that authors feedback strings for the failure modes (3.2) can comment on style directly against the submitted code — you already have the model in the loop for teaching, no reason to stand up a second JVM daemon before you need it.
-
-### 3.5 Feedback UI — unchanged from v3
-
-`extmarks` + Diagnostics API, Senior-Engineer-voice feedback strings sourced from the Variation (3.2), not hard-coded per problem.
-
-### 3.6 Efficiency telemetry (ties back to why this project started)
-
-The original motivation was Dvorak/neovim mastery, not just LeetCode correctness — don't lose that. Alongside pass/fail, the plugin tracks per-submission: keystroke count, arrow-key usage, and non-home-row navigation (reusing the counting approach `dojo`'s vim drills already use), surfaced as a secondary "how you solved it" score next to the correctness score. This is coaching, never a gate — a correct O(N) solution typed inefficiently still passes, it just gets a note.
-
----
-
-## 4. Data Flow
+## 3. Core loop
 
 ```
-Archetype (hand-authored, ~15-20)
-   │  + constraint dimension(s) picked by Progression Engine
+:DojoLeetcodeStart <archetype>
    ▼
-Variation Generator ──(cache hit?)──► cached Variation JSON
-   │ (cache miss)
+Stage constraint shown · real .kt file on disk (full LSP — it IS your neovim)
    ▼
-Claude API: constraint prose + test input specs + feedback strings
+You solve it YOUR way ──:DojoValidate──► compile + run (async, ~4s kotlinc)
+   │                                        tests: this stage + ALL prior stages (regression)
+   │                                        perf tests: constructed adversarial N, time-budgeted
    ▼
-Reference solution executes each generated input → derives EXPECTED output
+PASS → solve time vs PB recorded → :DojoNext escalates the constraint
    ▼
-Reject & regenerate if reference solution errors, else cache Variation
-   ▼
-Progression Engine renders Stage N (buffer + constraint + tests)
-   ▼
-User writes Kotlin ──:DojoValidate──► Compile → Execute/Regress → Complexity → Feedback
-   ▼
-Pass → progress.json updated (mastery signal) → next Stage/dimension chosen
+All stages complete → :DojoReview unlocks the editorial:
+   every named approach, real Kotlin, complexity, tradeoffs,
+   including approaches that would have FAILED a later stage and why
 ```
 
----
+Stage escalation is purely behavioral: a new constraint is new tests and/or a perf bar — never "now use technique X." If your stage-1 solution already survives stage 2, that's not cheating, that's engineering.
 
-## 5. Problem Schema (Archetype, not per-variation)
+## 4. Modules (implemented)
 
-```lua
--- lua/dojo-leetcode/archetypes/sliding_window.lua
-return {
-  id = "sliding_window",
-  title = "Sliding Window",
-  language = "kotlin",
-  scaffold = "fun solve(s: String): Int {\n\n}",
+- **`judge.lua`** — writes submission + generated harness to a `.kts`, runs `kotlinc -script` via `vim.system` (async, 30s hard kill for infinite loops). Harness times each case with `System.nanoTime`, prints `DOJO_RESULT` / `DOJO_TIME` lines; Lua parses and applies per-test `budget_ms`. Measurement in Kotlin, policy in Lua.
+- **`progression.lua`** — stage state machine. Flattens tests from stage 1..current for every validation (regression enforcement for free). Advancing requires a passing validate *of the current stage* — the gate is having actually solved it, not asking to move on.
+- **`state.lua`** — `~/.local/state/dojo-leetcode/progress.json`: stage, attempts/passes, per-stage personal-best solve times.
+- **`ui.lua`** — constraint pane + workspace `.kt` split; results with per-test pass/fail and timing; solve-time + PB display; editorial renderer (markdown buffer with Kotlin fences, treesitter does the rest).
+- **`archetypes/*.lua`** — data only: scaffold, stages (constraint, tests, optional `budget_ms` + `slow_msg`), on-demand hints, and `approaches` (the editorial: name, complexity, tradeoff note, full code).
 
-  -- Hand-written, trusted. Used to derive expected() for every
-  -- generated variation — never trust the LLM's stated answer.
-  reference_solutions = {
-    baseline = "kotlin/reference/sliding_window_baseline.kt",
-    optimal  = "kotlin/reference/sliding_window_optimal.kt",
-  },
+Commands: `:DojoLeetcodeStart` `:DojoValidate` `:DojoNext` `:DojoHint` `:DojoReset` `:DojoReview[!]`.
 
-  applicable_dimensions = { "scale", "encoding", "memory", "real_world" },
+## 5. The strategy layer (roadmap)
 
-  structural_rules = {
-    require_loop = {
-      query = "[(for_statement) (while_statement) (call_expression)] @loop",
-      msg = "A sliding window requires iterating over the sequence. Start with a loop.",
-    },
-  },
-}
-```
+Faker-level macro is *recognition* — reading a fight and knowing the play. Interview equivalent: read a novel problem statement and know the archetype, the approach, and the complexity target within a minute. Build order:
 
-A generated Variation (cached JSON, not hand-written) looks like the old v3 `stages[n]` shape — constraint text, tests (`expected` always reference-derived), and feedback strings — but is produced by 3.2, not typed by a human.
+1. **Now — Phase 1 (done):** 3 archetypes, black-box judge, perf bars, editorials, PBs.
+2. **Phase 2 — breadth:** grow to ~15–20 archetypes covering the FAANG canon (graph BFS/DFS, 1D/2D DP, heap, intervals, union-find, binary search on answer, backtracking, monotonic stack…). Each gets constructive generators + a real editorial. Content is the moat; the engine is done.
+3. **Phase 3 — recognition drills (`:DojoRecall`):** flash a problem statement (a *variation*, so memorized titles don't help), you commit to an archetype + complexity target in ≤60s, then reveal. Scored like dojo arcade. This is the macro trainer — separate from, and eventually more important than, the solving reps.
+4. **Phase 4 — optional AI garnish, never core:** post-solve commentary on *your specific code* (the one thing static editorials can't do) and novel prose for recall drills. Cached, offline-degradable, off by default.
+5. **System design** rides on Phase 3's skeleton (prompt → committed answer → reveal → self-score against a rubric), not on the judge. Design it when Phase 3 exists.
 
----
+## 6. Relationship to `dojo`
 
-## 6. Plugin API & Commands
-
-```lua
-{
-  "koda/dojo-leetcode.nvim",
-  opts = {
-    workspace_dir = "~/.local/state/dojo-leetcode",
-    anthropic_api_key_cmd = "op read op://...", -- pull from your secrets manager, not a literal key
-  }
-}
-```
-
-- `:DojoLeetcodeStart [archetype_id]` — opens the split, loads/generates Stage 1.
-- `:DojoValidate` — runs the pipeline (Structural → Compile → Execute/Regress → Complexity → Feedback).
-- `:DojoNext` — advances stage; may trigger a variation-generator cache miss.
-- `:DojoReset` — wipes progress for the current archetype.
-- `:DojoHint` — reveals the current stage's hint from the cached Variation.
-
----
-
-## 7. Roadmap
-
-1. **Phase 1 — prove the UX, no LLM yet.** Progression engine, validation pipeline (3.4), feedback UI, 5 archetypes with hand-written reference solutions and 2–3 *hand-authored* stage variations each (two sum, sliding window, two pointer, graph BFS, 1D DP). Confirms the core loop feels good before building the generator.
-2. **Phase 2 — wire the Variation Generator.** LLM calls, caching, reference-solution-derived expected values, rejection/regeneration on reference-solution failure. This is where "infinite variations" actually turns on.
-3. **Phase 3 — generalize.** Once real usage has exercised the archetype/dimension split, extract the content-type-agnostic core (progression, caching, feedback UI) from the Kotlin-specific judge, and add a system-design archetype type. System design needs its own judge design (no compiler to lean on — likely an LLM-graded rubric against a checklist schema) — don't design that now, design it once Phase 1–2 have taught you what actually generalizes.
+Unchanged: separate plugin (needs live LSP buffers), thin `dojo` course entry point later, shared state-dir conventions so `dojo stats` can eventually aggregate. Mechanics training (vim drills, Dvorak speed) stays in `dojo` where it already works; this plugin assumes those mechanics and trains judgment.

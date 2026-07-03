@@ -64,11 +64,30 @@ function M.next()
   local advanced = progression.advance(archetype)
   if advanced then
     ui.refresh_info(nil)
+    ui.mark_stage_start()
     vim.notify("dojo-leetcode: advanced to stage " .. progression.current_stage_index(archetype), vim.log.levels.INFO)
   else
-    ui.refresh_info({ "Archetype complete! Every stage passed, including regression." })
-    vim.notify("dojo-leetcode: archetype complete!", vim.log.levels.INFO)
+    ui.refresh_info({ "Archetype complete — every stage passed, including regression.", "", ":DojoReview to see every approach and what each one trades away." })
+    vim.notify("dojo-leetcode: archetype complete! :DojoReview unlocked", vim.log.levels.INFO)
   end
+end
+
+-- The editorial is earned: locked until the archetype is complete, because
+-- reading the answers first would delete the discovery this exists for.
+-- :DojoReview! spoils on purpose.
+function M.review(force)
+  local archetype = current_archetype()
+  if not archetype then
+    return
+  end
+  if not force and not progression.is_complete(archetype) then
+    vim.notify(
+      "dojo-leetcode: review unlocks when every stage is beaten (:DojoReview! to spoil yourself)",
+      vim.log.levels.WARN
+    )
+    return
+  end
+  ui.show_review(archetype)
 end
 
 function M.hint()
@@ -111,6 +130,9 @@ function M.setup(_opts)
   vim.api.nvim_create_user_command("DojoNext", M.next, {})
   vim.api.nvim_create_user_command("DojoHint", M.hint, {})
   vim.api.nvim_create_user_command("DojoReset", M.reset, {})
+  vim.api.nvim_create_user_command("DojoReview", function(cmd_opts)
+    M.review(cmd_opts.bang)
+  end, { bang = true })
 end
 
 return M
