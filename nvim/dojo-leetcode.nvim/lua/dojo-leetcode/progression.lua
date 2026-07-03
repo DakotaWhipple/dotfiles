@@ -62,6 +62,11 @@ end
 function M.validate(archetype, user_source, on_done)
   local stage_idx = M.current_stage_index(archetype)
   local tests = flatten_tests(archetype, stage_idx)
+  -- User-authored cases ride along on every run, marked as such. They
+  -- count toward pass/fail: if you wrote a test, you meant it.
+  for _, t in ipairs(state.load_custom_tests(archetype.id)) do
+    table.insert(tests, vim.tbl_extend("force", { stage = "custom" }, t))
+  end
   judge.run(user_source, tests, function(result)
     result.tests = tests
     result.stage_idx = stage_idx

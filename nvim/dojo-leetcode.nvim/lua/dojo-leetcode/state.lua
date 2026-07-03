@@ -66,6 +66,46 @@ function M.record_attempt(archetype_id, stage, passed)
   M.save(data)
 end
 
+-- Custom tests: user-authored cases stored per archetype as editable JSON.
+-- They run alongside the built-in tests on every validate.
+function M.custom_tests_path(archetype_id)
+  local dir = state_dir() .. "/custom_tests"
+  vim.fn.mkdir(dir, "p")
+  return dir .. "/" .. archetype_id .. ".json"
+end
+
+function M.load_custom_tests(archetype_id)
+  local f = io.open(M.custom_tests_path(archetype_id), "r")
+  if not f then
+    return {}
+  end
+  local content = f:read("*a")
+  f:close()
+  local ok, decoded = pcall(vim.json.decode, content)
+  if not ok or type(decoded) ~= "table" then
+    return {}
+  end
+  return decoded
+end
+
+function M.add_custom_test(archetype_id, call, expected)
+  local tests = M.load_custom_tests(archetype_id)
+  table.insert(tests, { call = call, expected = expected })
+  local f = io.open(M.custom_tests_path(archetype_id), "w")
+  if not f then
+    return false
+  end
+  -- One test per line so the file is pleasant to hand-edit via :DojoTests.
+  local lines = { "[" }
+  for i, t in ipairs(tests) do
+    lines[#lines + 1] = "  " .. vim.json.encode(t) .. (i < #tests and "," or "")
+  end
+  lines[#lines + 1] = "]"
+  f:write(table.concat(lines, "\n"))
+  f:close()
+  return true
+end
+
 -- Records a stage solve time; keeps the per-stage personal best.
 -- Returns the previous PB in ms (nil on first solve) so the UI can
 -- show "new PB" vs "PB stands".
