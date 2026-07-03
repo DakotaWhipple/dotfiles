@@ -23,8 +23,8 @@ return {
       hint = "If you added an `if` for these, ask what your main loop was "
         .. "missing that made the `if` feel necessary.",
       tests = {
-        { call = "solve(intArrayOf(4,4,4,4))", expected = "12" },
-        { call = "solve(intArrayOf(0,2))", expected = "0" },
+        { call = "solve(intArrayOf(4,4,4,4))", expected = "12", diag = "edge case: all heights equal" },
+        { call = "solve(intArrayOf(0,2))", expected = "0", diag = "edge case: two elements, one zero-height" },
       },
     },
     {

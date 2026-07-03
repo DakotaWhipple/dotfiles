@@ -22,20 +22,41 @@ function M.check()
     health.error("cannot create workspace dir: " .. ws)
   end
 
-  -- kotlin LSP: optional (completion/hover). The judge never needs it.
+  -- kotlin LSP: optional (completion/hover). The judge never needs it —
+  -- compile errors and leetcode-level diagnostics come from kotlinc runs.
   local kotlin_clients = vim.tbl_filter(function(c)
     return c.name:lower():find("kotlin") ~= nil
   end, vim.lsp.get_clients())
   if #kotlin_clients > 0 then
-    health.ok("kotlin LSP running: " .. kotlin_clients[1].name)
+    local c = kotlin_clients[1]
+    health.ok(("kotlin LSP running: %s (root: %s)"):format(c.name, c.root_dir or "none — single-file mode"))
+    local attached = false
+    for b in pairs(c.attached_buffers or {}) do
+      if vim.api.nvim_buf_get_name(b):sub(1, #config.workspace_dir) == config.workspace_dir then
+        attached = true
+        break
+      end
+    end
+    if attached then
+      health.ok("attached to a dojo workspace buffer")
+    else
+      health.info("not attached to any dojo workspace buffer right now")
+    end
+    if not c.root_dir then
+      health.info(
+        "no project root → JetBrains kotlin-lsp analyzes the file standalone; "
+          .. "expect completion/hover but few or no LSP diagnostics. "
+          .. "The judge's diagnostics (compile errors, off-by-one, edge cases) don't depend on it."
+      )
+    end
   else
     health.info(
-      "no kotlin LSP client active right now (it attaches when a .kt buffer opens). "
+      "no kotlin LSP client active right now (it attaches ~15s after a .kt buffer opens; JVM startup). "
         .. "LSP is optional — the judge compiles with kotlinc regardless."
     )
   end
   if config.quiet_lsp then
-    health.info("quiet_lsp=true: LSP diagnostics are muted in dojo workspace buffers (judge is the referee)")
+    health.warn("quiet_lsp=true: LSP diagnostics are muted in dojo workspace buffers")
   end
 
   -- archetypes load cleanly

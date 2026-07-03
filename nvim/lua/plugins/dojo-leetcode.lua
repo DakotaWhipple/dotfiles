@@ -5,6 +5,7 @@ return {
     "Dojo",
     "DojoLeetcodeStart",
     "DojoValidate",
+    "DojoCases",
     "DojoNext",
     "DojoHint",
     "DojoReset",

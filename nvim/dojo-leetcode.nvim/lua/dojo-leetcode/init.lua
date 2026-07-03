@@ -102,10 +102,19 @@ function M.test_add()
       ui.render_description()
       ui.results({
         { text = "added test: " .. call .. " == " .. expected, hl = "DojoPass" },
-        { text = "it now runs on every " .. config.keymap_prefix .. "r · edit/remove via :DojoTests", hl = "DojoDim" },
+        { text = "it now runs on every " .. config.key("r") .. " · edit/remove via :DojoTests", hl = "DojoDim" },
       })
     end)
   end)
+end
+
+--- Show the full test-case table (untruncated, with expected values).
+function M.cases()
+  local archetype = current_archetype()
+  if not archetype then
+    return
+  end
+  ui.show_cases(archetype)
 end
 
 --- Open the custom-tests JSON for direct editing.
@@ -125,7 +134,7 @@ function M.next()
     return
   end
   if progression.is_complete(archetype) then
-    ui.results({ { text = "already complete — " .. config.keymap_prefix .. "v for the review", hl = "DojoPass" } })
+    ui.results({ { text = "already complete — " .. config.key("v") .. " for the review", hl = "DojoPass" } })
     return
   end
 
@@ -133,7 +142,7 @@ function M.next()
   local last = ui.session.last_result
   if not last or last.stage_idx ~= stage_idx or not last.ok then
     ui.results({
-      { text = "pass every test first (" .. config.keymap_prefix .. "r), then advance", hl = "DojoSlow" },
+      { text = "pass every test first (" .. config.key("r") .. "), then advance", hl = "DojoSlow" },
     })
     return
   end
@@ -151,7 +160,7 @@ function M.next()
   else
     ui.results({
       { text = "COMPLETE — every stage beaten, regression included.", hl = "DojoPass" },
-      { text = config.keymap_prefix .. "v — see every approach and what each one trades away.", hl = "DojoKey" },
+      { text = config.key("v") .. " — see every approach and what each one trades away.", hl = "DojoKey" },
     })
   end
 end
@@ -227,11 +236,17 @@ function M.setup(opts)
       M.menu()
     end
   end, { nargs = "?", complete = complete_ids })
+  -- Never jump into a problem uninvited: no args means the menu, always.
   cmd("DojoLeetcodeStart", function(c)
-    M.start(c.args ~= "" and c.args or "two_sum")
+    if c.args ~= "" then
+      M.start(c.args)
+    else
+      M.menu()
+    end
   end, { nargs = "?", complete = complete_ids })
 
   cmd("DojoValidate", M.validate)
+  cmd("DojoCases", M.cases)
   cmd("DojoNext", M.next)
   cmd("DojoHint", M.hint)
   cmd("DojoReset", M.reset)

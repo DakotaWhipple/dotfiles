@@ -53,19 +53,21 @@ Stage escalation is purely behavioral: a new constraint is new tests and/or a pe
 - **`progression.lua`** — stage state machine. Flattens tests from stage 1..current for every validation (regression enforcement for free). Advancing requires a passing validate *of the current stage* — the gate is having actually solved it, not asking to move on.
 - **`state.lua`** — `~/.local/state/dojo-leetcode/progress.json`: stage, attempts/passes, per-stage personal-best solve times.
 - **`ui.lua`** — constraint pane + workspace `.kt` split; results with per-test pass/fail and timing; solve-time + PB display; editorial renderer (markdown buffer with Kotlin fences, treesitter does the rest).
-- **`archetypes/*.lua`** — data only: scaffold, stages (constraint, tests, optional `budget_ms` + `slow_msg`), on-demand hints, and `approaches` (the editorial: name, complexity, tradeoff note, full code).
+- **`archetypes/*.lua`** — data only: scaffold, stages (constraint, tests, optional `budget_ms` + `slow_msg`, optional `diag` edge-case label), on-demand hints, and `approaches` (the editorial: name, complexity, tradeoff note, full code). `demo` is the feature tour: a pre-planted off-by-one, a ktlint bait line, and constraint text that walks through every instrument.
+- **`diagnostics.lua`** — judge verdicts as native nvim diagnostics on the code buffer. kotlinc errors/warnings are mapped back to their real buffer lines (user source occupies lines 1..N of the submitted script); behavioral failures are classified — off-by-one (numeric actual = expected ± 1), archetype-labeled edge cases (`diag`), exception fingerprints (IndexOutOfBounds → loop-bound hint), SLOW budget misses as INFO — and anchored to `fun solve`. Cleared on a green run.
 
 - **App shell** — this must feel like a full leetcode app, not commands feeding notifications:
   - `:Dojo` dashboard: problem list with progress/PBs, kotlinc status, workspace path, first-run walkthrough; `<CR>` to enter.
   - Persistent three-pane tab: problem (left) · your code (right) · results console (below). Panes are validity-checked and rebuilt if closed — output can never vanish into a dead buffer.
   - Results show *real output*: actual values (arrays pretty-printed), your own `println`s captured into a console section, per-test timing, compile+run wall time.
-  - `:DojoTry <expr>` (`,y`): REPL-style — compile the buffer, evaluate any expression, see the value/prints/exception raw. No judgment.
-  - Custom tests: `:DojoTestAdd` (`,t`) prompts call+expected, stored per-problem as hand-editable JSON (`:DojoTests`), runs with every validate.
-  - Buffer-local keymaps in dojo panes (`,r` run · `,y` try · `,t` add test · `,h` hint · `,n` next · `,v` review · `,d` menu).
-  - `quiet_lsp` (default on): kotlin-lsp diagnostics are muted in workspace buffers — a lone `.kt` with no gradle project produces noise the judge doesn't care about; completion/hover keep working. `:checkhealth dojo-leetcode` verifies kotlinc/LSP/workspace/archetypes.
+  - `:DojoTry <expr>` (`<leader>oy`): REPL-style — compile the buffer, evaluate any expression, see the value/prints/exception raw. No judgment.
+  - Custom tests: `:DojoTestAdd` (`<leader>ot`) prompts call+expected, stored per-problem as hand-editable JSON (`:DojoTests`), runs with every validate.
+  - `:DojoCases` (`<leader>oc`): the full untruncated test table — every call, expected value, budget, and custom case the next run will judge.
+  - Buffer-local keymaps in dojo panes under `<leader>o` (dOjo; shows as a which-key "dojo" group): `r` run · `c` cases · `y` try · `t` add test · `h` hint · `n` next · `v` review · `d` menu. The old `,` prefix shadowed real vim/LazyVim keys.
+  - Diagnostic layers, all native `vim.diagnostic` in the code buffer: kotlin-lsp does completion/hover only (the pre-alpha JetBrains server returns zero diagnostics for projectless files — verified empirically: hover resolves stdlib, `textDocument/diagnostic` pulls come back empty); ktlint lints on save via nvim-lint (LazyVim kotlin extra); the judge supplies compiler errors/warnings on real lines plus leetcode-level verdicts. `quiet_lsp` (now default **off** — it was hiding every layer, including ktlint) mutes them all if wanted. `:checkhealth dojo-leetcode` verifies kotlinc/LSP-attach/workspace/archetypes.
   - Session adoption: reopen nvim on a workspace `.kt` and `:DojoValidate` just works — the session is rebuilt from the filename.
 
-Commands: `:Dojo [problem]` `:DojoValidate` `:DojoNext` `:DojoHint` `:DojoReset` `:DojoReview[!]` `:DojoTry` `:DojoTestAdd` `:DojoTests`.
+Commands: `:Dojo [problem]` `:DojoValidate` `:DojoCases` `:DojoNext` `:DojoHint` `:DojoReset` `:DojoReview[!]` `:DojoTry` `:DojoTestAdd` `:DojoTests`. No entry point auto-opens a problem — `:Dojo` and no-arg `:DojoLeetcodeStart` land on the dashboard, always.
 
 ## 5. The strategy layer (roadmap)
 

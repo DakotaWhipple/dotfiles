@@ -114,25 +114,31 @@ end
 local function apply_keymaps(buf)
   local p = config.keymap_prefix
   local maps = {
-    { "r", "validate", "dojo: run tests" },
-    { "y", "try_prompt", "dojo: try an expression" },
-    { "t", "test_add", "dojo: add a test case" },
-    { "h", "hint", "dojo: hint" },
-    { "n", "next", "dojo: next stage" },
-    { "v", "review", "dojo: review (after the win)" },
-    { "d", "menu", "dojo: dashboard" },
+    { "r", "validate", "run tests" },
+    { "c", "cases", "show test cases" },
+    { "y", "try_prompt", "try an expression" },
+    { "t", "test_add", "add a test case" },
+    { "h", "hint", "hint" },
+    { "n", "next", "next stage" },
+    { "v", "review", "review (after the win)" },
+    { "d", "menu", "dashboard" },
   }
   for _, m in ipairs(maps) do
     vim.keymap.set("n", p .. m[1], function()
       require("dojo-leetcode")[m[2]]()
-    end, { buffer = buf, desc = m[3], nowait = true })
+    end, { buffer = buf, desc = "dojo: " .. m[3], nowait = true })
+  end
+  -- Name the prefix in the which-key leader popup for dojo buffers.
+  local ok, wk = pcall(require, "which-key")
+  if ok then
+    wk.add({ { p, group = "dojo", buffer = buf } })
   end
 end
 
 local KEYS_LINE = function()
-  local p = config.keymap_prefix
-  return ("%sr run · %sy try · %st add test · %sh hint · %sn next · %sv review · %sd menu"):format(
-    p, p, p, p, p, p, p
+  local k = config.key
+  return ("%s run · %s cases · %s try · %s add test · %s hint · %s next · %s review · %s menu"):format(
+    k("r"), k("c"), k("y"), k("t"), k("h"), k("n"), k("v"), k("d")
   )
 end
 
@@ -229,7 +235,7 @@ function M.open(archetype)
   M.mark_stage_start()
   M.render_description()
   set_panel_lines(M.session.results_buf, {
-    { text = "Write your solution in the code pane, then " .. config.keymap_prefix .. "r (or :DojoValidate) to run.", hl = "DojoDim" },
+    { text = "Write your solution in the code pane, then " .. config.key("r") .. " (or :DojoValidate) to run.", hl = "DojoDim" },
     { text = "Output — test results, your printlns, timings — lands here.", hl = "DojoDim" },
   })
 end
@@ -254,7 +260,7 @@ function M.render_description()
 
   add(archetype.title, "DojoTitle")
   if complete then
-    add("COMPLETE — every stage beaten. " .. config.keymap_prefix .. "v for the review.", "DojoPass")
+    add("COMPLETE — every stage beaten. " .. config.key("v") .. " for the review.", "DojoPass")
   else
     add(("stage %d of %d"):format(stage_idx, #archetype.stages), "DojoDim")
   end
@@ -327,6 +333,9 @@ function M.show_result(result)
     return
   end
   M.session.last_result = result
+  -- Judge verdicts double as buffer diagnostics: compile errors on their
+  -- real lines, behavioral misses (off-by-one, edge case, budget) on solve().
+  require("dojo-leetcode.diagnostics").publish(M.session.code_buf, result)
 
   local e = {}
   local function add(text, hl)
@@ -392,7 +401,47 @@ function M.show_result(result)
       or ("PB " .. fmt_ms(prev_pb))
     add("")
     add((" stage solved in %s — %s"):format(fmt_ms(elapsed_ms), pb_note), "DojoPass")
-    add(" " .. config.keymap_prefix .. "n for the next stage.", "DojoKey")
+    add(" " .. config.key("n") .. " for the next stage.", "DojoKey")
+  end
+
+  M.results(e)
+end
+
+--- Full test-case table for the current stage run: untruncated calls,
+--- expected values, budgets, custom cases. What the judge will actually run.
+function M.show_cases(archetype)
+  if not M.ensure() then
+    return
+  end
+  local progression = require("dojo-leetcode.progression")
+  local state = require("dojo-leetcode.state")
+  local stage_idx = progression.current_stage_index(archetype)
+
+  local e = {}
+  local function add(text, hl)
+    table.insert(e, hl and { text = text, hl = hl } or text)
+  end
+
+  add(("test cases — everything %s runs right now"):format(config.key("r")), "DojoTitle")
+  for s = 1, stage_idx do
+    add("")
+    add(("stage %d%s"):format(s, s < stage_idx and "  (regression)" or ""), s == stage_idx and "DojoKey" or "DojoDim")
+    for _, t in ipairs(archetype.stages[s].tests) do
+      add("  " .. t.call)
+      add("    == " .. t.expected, "DojoDim")
+      if t.budget_ms then
+        add("    within " .. fmt_ms(t.budget_ms), "DojoSlow")
+      end
+    end
+  end
+  local customs = state.load_custom_tests(archetype.id)
+  if #customs > 0 then
+    add("")
+    add("yours  (edit via :DojoTests)", "DojoKey")
+    for _, t in ipairs(customs) do
+      add("  " .. t.call)
+      add("    == " .. t.expected, "DojoDim")
+    end
   end
 
   M.results(e)
@@ -474,9 +523,15 @@ function M.open_dashboard()
   add("")
   local kotlinc_ok = vim.fn.executable("kotlinc") == 1
   add(
-    kotlinc_ok and "  kotlinc ✓" or "  kotlinc MISSING — brew install kotlin",
+    kotlinc_ok and "  kotlinc ✓  (the judge)" or "  kotlinc MISSING — brew install kotlin",
     kotlinc_ok and "DojoPass" or "DojoFail"
   )
+  local lsp_clients = vim.lsp.get_clients({ name = "kotlin_lsp" })
+  if #lsp_clients > 0 then
+    add("  kotlin-lsp ✓  (completion + hover; diagnostics come from the judge)", "DojoPass")
+  else
+    add("  kotlin-lsp not running — starts with the first .kt buffer (JVM, give it ~15s)", "DojoDim")
+  end
   add("  solutions save to " .. vim.fn.fnamemodify(config.workspace_dir, ":~"), "DojoDim")
   add("")
   add("problems", "DojoTitle")
@@ -508,9 +563,9 @@ function M.open_dashboard()
   if not any_started then
     add("")
     add("first time?", "DojoTitle")
-    add("  1. <CR> on Two Sum — problem left, your code right, results below")
-    add("  2. write Kotlin in solve(), save-optional, hit " .. config.keymap_prefix .. "r")
-    add("  3. stuck? " .. config.keymap_prefix .. "h. curious? " .. config.keymap_prefix .. "y runs any expression against your code")
+    add("  1. <CR> on the demo — a guided tour of every feature, nothing at stake")
+    add("  2. write Kotlin in solve(), save-optional, hit " .. config.key("r"))
+    add("  3. stuck? " .. config.key("h") .. ". curious? " .. config.key("y") .. " runs any expression against your code")
     add("  4. :checkhealth dojo-leetcode if anything seems broken")
   end
 

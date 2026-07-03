@@ -110,13 +110,21 @@ end
 ---   { ok, compile_error?, elapsed_ms, console = {lines of user println},
 ---     results = { [i] = { status = PASS|FAIL|ERROR|SLOW, detail, ms, actual } } }
 function M.run(user_source, tests, on_result)
+  -- How many script lines belong to the user: lets diagnostics map kotlinc
+  -- errors back onto the buffer instead of pointing into the harness.
+  local user_line_count = #vim.split(user_source, "\n")
   run_kotlinc(user_source .. "\n" .. render_harness(tests), function(res, write_err)
     if write_err then
-      on_result({ ok = false, compile_error = write_err })
+      on_result({ ok = false, compile_error = write_err, user_line_count = user_line_count })
       return
     end
     if not res.stdout or not res.stdout:find("DOJO_DONE") then
-      on_result({ ok = false, compile_error = timeout_or_stderr(res), elapsed_ms = res.elapsed_ms })
+      on_result({
+        ok = false,
+        compile_error = timeout_or_stderr(res),
+        elapsed_ms = res.elapsed_ms,
+        user_line_count = user_line_count,
+      })
       return
     end
 
@@ -182,7 +190,16 @@ function M.run(user_source, tests, on_result)
       end
     end
 
-    on_result({ ok = all_pass, results = results, console = console, elapsed_ms = res.elapsed_ms })
+    on_result({
+      ok = all_pass,
+      results = results,
+      console = console,
+      elapsed_ms = res.elapsed_ms,
+      -- kotlinc warnings (unused variable, deprecation, …) still arrive on
+      -- stderr when compilation succeeds — surface them as diagnostics.
+      compile_warnings = res.stderr ~= "" and res.stderr or nil,
+      user_line_count = user_line_count,
+    })
   end)
 end
 

@@ -22,8 +22,8 @@ return {
       hint = "If your approach was value-based, does it care whether values are "
         .. "negative? And what naturally happens if the loop just... finishes?",
       tests = {
-        { call = "solve(intArrayOf(-3,4,3,90), 0)", expected = "intArrayOf(0,2)" },
-        { call = "solve(intArrayOf(1,2,3), 100)", expected = "intArrayOf()" },
+        { call = "solve(intArrayOf(-3,4,3,90), 0)", expected = "intArrayOf(0,2)", diag = "edge case: negative numbers" },
+        { call = "solve(intArrayOf(1,2,3), 100)", expected = "intArrayOf()", diag = "edge case: no valid pair (return empty, not null)" },
       },
     },
     {

@@ -12,7 +12,7 @@ return {
       tests = {
         { call = [[solve("abcabcbb")]], expected = "3" },
         { call = [[solve("bbbbb")]], expected = "1" },
-        { call = [[solve("")]], expected = "0" },
+        { call = [[solve("")]], expected = "0", diag = "edge case: empty string" },
         { call = [[solve("pwwkew")]], expected = "3" },
       },
     },
@@ -23,7 +23,7 @@ return {
       hint = "Does anything in your solution silently assume there are only "
         .. "128 possible characters?",
       tests = {
-        { call = [[solve("aαβα")]], expected = "3" },
+        { call = [[solve("aαβα")]], expected = "3", diag = "edge case: non-ASCII chars (fixed-size alphabet assumption?)" },
       },
     },
     {
