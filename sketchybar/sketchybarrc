@@ -37,7 +37,7 @@ sketchybar --add item logo left \
 
 sketchybar --add event aerospace_workspace_change
 for sid in 1 2 3 4 5 6 7 8 9; do
-  m=$(aerospace list-workspaces --monitor all --format '%{monitor-id} %{workspace}' | awk -v ws="$sid" '$2 == ws {print $1}')
+  m=$(aerospace list-workspaces --monitor all --format '%{monitor-appkit-nsscreen-screens-id} %{workspace}' | awk -v ws="$sid" '$2 == ws {print $1}')
   sketchybar --add item "space.$sid" left \
     --subscribe "space.$sid" aerospace_workspace_change \
     --set "space.$sid" \
