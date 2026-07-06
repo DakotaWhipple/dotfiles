@@ -32,7 +32,7 @@ KITTY=/Applications/kitty.app/Contents/MacOS/kitty
 [ -x "$KITTY" ] || KITTY=$(command -v kitty)
 
 e=$(printf '\033')
-MAN_HINTS='h/l tab · j/k win · n new · s/v split · z zoom · x close · , name · r resize · esc exit'
+MAN_HINTS='h/l tab · j/k win · t detach · n new · s/v split · z zoom · x close · , name · r resize · esc exit'
 RES_HINTS='h/j/k/l shrink·grow · = reset · esc back'
 
 # Repaint the single-row bar for the active mode: only that mode's hints are
