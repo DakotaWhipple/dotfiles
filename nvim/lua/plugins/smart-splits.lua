@@ -2,6 +2,11 @@ return {
   -- seamless ctrl-hjkl between kitty splits and nvim splits
   "mrjones2014/smart-splits.nvim",
   build = "./kitty/install-kittens.bash",
+  -- Must NOT lazy-load with the kitty integration: the plugin sets kitty's
+  -- `IS_NVIM` user-var on load, and kitty's `--when-focus-on var:IS_NVIM`
+  -- passthrough only forwards ctrl-hjkl to nvim once that var is set. Loading
+  -- on `keys` deadlocks (kitty eats the key before it can trigger the load).
+  lazy = false,
   opts = { at_edge = "stop" },
   keys = {
     {
